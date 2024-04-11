@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  postgres:
+    build:
+      context: ./DB
+      dockerfile: Dockerfile
+    container_name: my-postgres-container
+    env_file:
+      - ./DB/.env.production
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      my_network:
+        ipv4_address: 172.20.0.2  # Adresse IP spécifique pour PostgreSQL
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: my-backend-container
+    working_dir: /app
+    command: npm start
+    env_file:
+      - ./backend/.env.production
+    ports:
+      - "3030:3030"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+    networks:
+      my_network:
+        ipv4_address: 172.20.0.3  # Adresse IP spécifique pour le backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: my-frontend-container
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "8070:80"
+    networks:
+      my_network:
+        ipv4_address: 172.20.0.4  # Adresse IP spécifique pour le frontend
+
+networks:
+  my_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
