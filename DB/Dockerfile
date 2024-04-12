@@ -11,5 +11,3 @@ COPY init.sql /docker-entrypoint-initdb.d/
 # Lecture des variables d'environnement depuis le fichier .env
 ENV $(cat .env | xargs)
 
-# L'image officielle PostgreSQL exécute automatiquement les scripts dans /docker-entrypoint-initdb.d/
-# lors du démarrage du conteneur, donc aucune instruction CMD ou ENTRYPOINT n'est nécessaire ici.

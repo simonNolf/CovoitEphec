@@ -7,14 +7,11 @@ CREATE DATABASE IF NOT EXISTS "TFE"
     LC_CTYPE = 'French_Belgium.1252'
     TEMPLATE = template0;
 
--- Changement du contexte vers la base de données TFE
-\c "TFE";
+-- Changement du search_path vers le schéma public
+SET search_path = public;
 
--- Création du schéma public
-CREATE SCHEMA IF NOT EXISTS "public";
-
--- Création de la table "user" dans le schéma public
-CREATE TABLE IF NOT EXISTS "public"."user"
+-- Création de la table "user"
+CREATE TABLE IF NOT EXISTS "user"
 (
     matricule character varying(8) NOT NULL,
     password character varying NOT NULL,
