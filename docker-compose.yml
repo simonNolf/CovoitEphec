@@ -7,14 +7,14 @@ services:
       dockerfile: Dockerfile
     container_name: my-postgres-container
     env_file:
-      - ./DB/.env.production
+      - ./DB/.env
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      my_network:
-        ipv4_address: 172.20.0.2  # Adresse IP spécifique pour PostgreSQL
+      - my_network
+
 
   backend:
     build:
@@ -32,8 +32,7 @@ services:
     volumes:
       - ./backend:/app
     networks:
-      my_network:
-        ipv4_address: 172.20.0.3  # Adresse IP spécifique pour le backend
+      - my_network
 
   frontend:
     build:
@@ -45,8 +44,7 @@ services:
     ports:
       - "8070:80"
     networks:
-      my_network:
-        ipv4_address: 172.20.0.4  # Adresse IP spécifique pour le frontend
+      - my_network
 
 networks:
   my_network:
