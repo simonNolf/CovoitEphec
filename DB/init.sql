@@ -1,7 +1,21 @@
--- SCHEMA: public
+-- Création de la base de données TFE
+CREATE DATABASE IF NOT EXISTS "TFE"
+    WITH
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'French_Belgium.1252'
+    LC_CTYPE = 'French_Belgium.1252'
+    LOCALE = 'fr_BE.UTF-8'
+    CONNECTION LIMIT = -1
+    TEMPLATE = template0;
 
+-- Utilisation de la base de données TFE
+\c "TFE";
+
+-- Création du schéma public
 CREATE SCHEMA IF NOT EXISTS public;
 
+-- Création de la table "user"
 CREATE TABLE IF NOT EXISTS public."user"
 (
     matricule character varying(8) NOT NULL,
