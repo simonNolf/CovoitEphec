@@ -1,0 +1,24 @@
+name: Test Ionic (jest)
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    types:
+      - synchronize
+      - opened
+      - reopened
+      - labeled
+      - unlabeled
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies and run react tests
+      run: |
+        cd frontend
+        npm install
+        npm test

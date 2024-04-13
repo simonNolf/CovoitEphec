@@ -106,8 +106,9 @@ router.post('/register', async (req, res) => {
       to: 'simon.nolf@gmail.com',
       subject: 'Activation de compte',
       html: `
-        <button href="${activationLink}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none;">Activer le compte</button>
-      `,
+      <p>Cliquez sur le lien ci-dessous pour activer votre compte :</p>
+      <a href="${activationLink}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none;">Activer le compte</a>
+    `,
     };
 
     await transporter.sendMail(mailOptions);
