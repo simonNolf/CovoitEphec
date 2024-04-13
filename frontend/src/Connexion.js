@@ -18,39 +18,48 @@ const ConnexionContainer = () => {
         setMatricule(matriculeFromQuery || ''); // Utilisez le matricule récupéré ou une chaîne vide par défaut
     }, [location.search]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      setLoading(true);
-      const response = await fetch(`${apiUrl}/users/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          matricule,
-          password,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setBackendMessage(data.message);
-        navigate("/profil")
-      } else {
-        const errorData = await response.json();
-        console.error(errorData.message);
-        setErrorMessage(errorData.message);
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+  
+      try {
+          setLoading(true);
+          const response = await fetch(`${apiUrl}/users/login`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                  matricule,
+                  password,
+              }),
+          });
+  
+          if (response.ok) {
+              const data = await response.json();
+              setBackendMessage(data.message);
+              navigate("/profil")
+          } else {
+              const errorData = await response.json();
+              setErrorMessage(errorData.message);
+              
+              // Afficher le message d'erreur uniquement en dehors des tests
+              if (process.env.NODE_ENV !== 'test') {
+                  console.error(errorData.message);
+              }
+          }
+  
+      } catch (error) {
+          // Afficher l'erreur uniquement en dehors des tests
+          if (process.env.NODE_ENV !== 'test') {
+              console.error('Erreur lors de la connexion :', error);
+          }
+          setErrorMessage('Erreur lors de la connexion. Veuillez réessayer.');
+      } finally {
+          setLoading(false);
       }
-
-    } catch (error) {
-      console.error('Erreur lors de la connexion :', error);
-      setErrorMessage('Erreur lors de la connexion. Veuillez réessayer.');
-    } finally {
-      setLoading(false);
-    }
   };
+  
+  
 
   return (
     <>
