@@ -9,16 +9,19 @@ const LoginComponent = () => {
   const location = useLocation();
   const apiUrl = process.env.REACT_APP_API_URL;
 
-
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const matriculeFromQuery = searchParams.get('matricule');
-    setMatricule(matriculeFromQuery || '');
+    const storedMatricule = sessionStorage.getItem('matricule');
+    if (storedMatricule) {
+      setMatricule(storedMatricule);
+    } else {
+      const searchParams = new URLSearchParams(location.search);
+      const matriculeFromQuery = searchParams.get('matricule');
+      setMatricule(matriculeFromQuery || '');
+    }
   }, [location.search]);
 
   async function fetchCSVData() {
     const csvUrl = 'data.csv';
-  
     try {
       const response = await fetch(csvUrl);
       const csvData = await response.text();
@@ -28,8 +31,8 @@ const LoginComponent = () => {
       throw error;
     }
   }
-  
-  async function checkMatriculeInCSV(matriculeToCheck, csvData) {   
+
+  async function checkMatriculeInCSV(matriculeToCheck, csvData) {
     const rows = csvData.split('\n').map(row => row.split(';'));
     for (let i = 1; i < rows.length; i++) {
       const matriculeFromCSV = rows[i][0].trim();
@@ -42,18 +45,13 @@ const LoginComponent = () => {
 
   async function checkMatriculeInDB(matriculeToCheck) {
     try {
-      // Utilisation de fetch pour effectuer une requête GET vers la route spécifique avec le matricule comme paramètre
       const response = await fetch(`${apiUrl}/users/${matriculeToCheck}`);
-      // Vérification si la réponse est OK (200)
       if (response.ok) {
-          // Récupération de la réponse au format JSON
-          const data = await response.json();
-          // Traitement des données reçues du backend
-          console.log(data); // Vous pouvez remplacer cette ligne par le traitement spécifique que vous souhaitez effectuer avec les données
-          return true
+        const data = await response.json();
+        console.log(data);
+        return true;
       } else {
-          // Si la réponse n'est pas OK, affichage du message d'erreur
-          console.error('Erreur lors de la récupération des données:', response.statusText);
+        console.error('Erreur lors de la récupération des données:', response.statusText);
       }
     } catch (error) {
       console.error('Erreur lors de la vérification du matricule dans la base de données :', error.message);
@@ -67,17 +65,14 @@ const LoginComponent = () => {
       setLoading(true);
       const csvData = await fetchCSVData();
       const matriculeExistsInCSV = await checkMatriculeInCSV(matricule, csvData);
-      // Supposons que checkMatriculeInDB est la fonction pour vérifier le matricule dans la base de données
       const matriculeExistsInDB = await checkMatriculeInDB(matricule);
 
       if (matriculeExistsInCSV && matriculeExistsInDB) {
-        // Rediriger vers la page de connexion si le matricule existe dans le CSV et dans la base de données
-        navigate("/connexion?matricule=" + matricule);
-        console.log("Rediriger vers la page de connexion");
+        sessionStorage.setItem('matricule', matricule);
+        navigate("/connexion");
       } else if (matriculeExistsInCSV) {
-        // Rediriger vers la page d'inscription si le matricule existe dans le CSV mais pas dans la base de données
-        navigate("/inscription?matricule=" + matricule);
-        console.log("Rediriger vers la page d'inscription");
+        sessionStorage.setItem('matricule', matricule);
+        navigate("/inscription");
       } else {
         setErrorMessage(`Le matricule : ${matricule} n'existe pas`);
       }

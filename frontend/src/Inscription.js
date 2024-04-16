@@ -22,11 +22,12 @@ const InscriptionContainer = () => {
     const location = useLocation();
 
     useEffect(() => {
-        // Récupérer le matricule depuis les paramètres de recherche de l'URL
-        const searchParams = new URLSearchParams(location.search);
-        const matriculeFromQuery = searchParams.get('matricule');
-        setMatricule(matriculeFromQuery || ''); // Utilisez le matricule récupéré ou une chaîne vide par défaut
-    }, [location.search]);
+        // Récupérer le matricule depuis le sessionStorage
+        const storedMatricule = sessionStorage.getItem('matricule');
+        if (storedMatricule) {
+            setMatricule(storedMatricule);
+        }
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

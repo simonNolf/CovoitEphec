@@ -4,6 +4,8 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const dotenv = require("dotenv");
 const bcrypt = require('bcryptjs');
+const moment = require('moment'); 
+
 
 dotenv.config();
 
@@ -79,7 +81,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-const moment = require('moment'); // Assurez-vous d'installer cette bibliothèque en utilisant npm install moment
 
 router.post('/register', async (req, res) => {
   try {
