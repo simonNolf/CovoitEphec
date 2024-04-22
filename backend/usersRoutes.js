@@ -1,12 +1,12 @@
 const express = require('express');
 const db = require('./database');
-const router = express.Router();
+const app = express.Router();
 const nodemailer = require('nodemailer');
 const dotenv = require("dotenv");
 const bcrypt = require('bcryptjs');
 const moment = require('moment'); 
-
-
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken')
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
@@ -20,7 +20,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-router.get('/getMatricule', async (req, res) => {
+app.get('/getMatricule', async (req, res) => {
   try {
     const matricule = await db.one('select matricule from public.user');
     
@@ -32,7 +32,7 @@ router.get('/getMatricule', async (req, res) => {
   }
 });
 
-router.get('/:matricule', async (req, res) => {
+app.get('/:matricule', async (req, res) => {
   const matriculeToCheck = req.params.matricule;
 
   try {
@@ -49,8 +49,7 @@ router.get('/:matricule', async (req, res) => {
   }
 });
 
-// Route de connexion
-router.post('/login', async (req, res) => {
+app.post('/login', async (req, res) => {
   const { matricule, password } = req.body;
 
   try {
@@ -63,7 +62,17 @@ router.post('/login', async (req, res) => {
 
       if (isPasswordMatch) {
         if (user.status === 'active') {
-          res.json({ success: true, message: 'Connexion réussie' });
+          // Générer un nouveau token à chaque connexion
+          const firstToken = crypto.randomBytes(64).toString('hex');
+
+          // Enregistrer le nouveau token dans la table token
+          await db.none('INSERT INTO public.token (matricule, token, created_at, expires_to) VALUES ($1, $2, NOW(), NOW() + INTERVAL \'1 hour\')', [user.matricule, firstToken]);
+
+          // Générer un deuxième token qui contient le premier token dans son payload
+          const secondToken = jwt.sign({ firstToken: firstToken }, process.env.TOKEN, { expiresIn: '1h' });
+
+          // Retourner le deuxième token au frontend
+          res.json({ success: true, message: 'Connexion réussie', token: secondToken });
         } else if (user.status === 'pending') {
           res.status(401).json({ success: false, message: 'Votre compte est en attente. Veuillez consulter vos e-mails pour activer votre compte.' });
         } else if (user.status === 'archived') {
@@ -82,7 +91,8 @@ router.post('/login', async (req, res) => {
 });
 
 
-router.post('/register', async (req, res) => {
+
+app.post('/register', async (req, res) => {
   try {
     const { matricule, password, email } = req.body;
 
@@ -121,5 +131,4 @@ router.post('/register', async (req, res) => {
   }
 });
 
-
-module.exports = router;
+module.exports = app;

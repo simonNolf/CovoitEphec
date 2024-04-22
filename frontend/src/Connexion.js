@@ -19,7 +19,7 @@ const ConnexionContainer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
       setLoading(true);
       const response = await fetch(`${apiUrl}/users/login`, {
@@ -32,11 +32,15 @@ const ConnexionContainer = () => {
           password,
         }),
       });
-
+  
       if (response.ok) {
         const data = await response.json();
+        
+        // Assigne le token au session storage
+        sessionStorage.setItem('token', data.token);
+        
         setBackendMessage(data.message);
-        navigate("/profil")
+        navigate("/profil");
       } else {
         const errorData = await response.json();
         setErrorMessage(errorData.message);
@@ -55,6 +59,7 @@ const ConnexionContainer = () => {
       setLoading(false);
     }
   };
+  
 
   return (
     <>
