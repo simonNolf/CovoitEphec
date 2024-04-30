@@ -1,0 +1,79 @@
+name: Deploy test to VPS
+
+on:
+  push:
+    branches:
+      - dev-main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.KEY_SSH }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_IP: ${{ secrets.VPS_IP }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Create .ssh directory and known_hosts file
+      run: |
+        mkdir -p ~/.ssh
+        touch ~/.ssh/known_hosts
+
+    - name: Update known_hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.VPS_IP }} >> ~/.ssh/known_hosts
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.KEY_SSH }}
+
+    - name: Create .env files on VPS
+      run: |
+        ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} /bin/bash << 'EOF'
+          cd test/TFE2/backend
+          echo "PGHOST=${{ secrets.PGHOST }}" > .env.production
+          echo "PGUSER=${{ secrets.PGUSER }}" >> .env.production
+          echo "PGPASSWORD=${{ secrets.PGPASSWORD }}" >> .env.production
+          echo "PGPORT=${{ secrets.PGPORT }}" >> .env.production
+          echo "PGDATABASE=${{ secrets.PGDATABASE }}" >> .env.production
+          echo "" >> .env
+          echo "API_URL=${{ secrets.API_URL }}" >> .env.production
+          echo "MAIL=${{ secrets.MAIL }}" >> .env.production
+          echo "MDP=${{ secrets.MDP }}" >> .env.production
+          echo "TOKEN=${{ secrets.TOKEN}}" >> .env.production
+
+          cd ..
+          cd ./frontend
+          echo "REACT_APP_API_URL=${{ secrets.VITE_API_URL }}" > .env
+
+          cd ..
+          cd ./DB
+          echo "POSTGRES_HOST=${{ secrets.PGHOST }}" > .env
+          echo "POSTGRES_USER=${{ secrets.PGUSER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.PGPASSWORD }}" >> .env
+          echo "POSTGRES_PORT=${{ secrets.PGPORT }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.PGDATABASE }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD}}" >> .env
+        EOF
+
+    - name: Create Docker network
+      run: |
+        docker network create my_network
+
+    - name: Deploy to VPS
+      run: |
+        ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} /bin/bash << 'EOF'
+          cd test/TFE2
+          git pull origin dev-main
+          cd frontend
+          npm install
+          ionic build
+          cd ..
+          docker-compose down
+          docker-compose up -d
+          docker-compose up -d
+        EOF

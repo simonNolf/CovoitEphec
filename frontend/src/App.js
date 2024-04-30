@@ -5,6 +5,7 @@ import Profil from './Profil';
 import Login from './Login';
 import Inscription from "./Inscription"
 import Connexion from './Connexion'
+import EditProfil from './EditProfil'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path ="/login" element={<Login />} />
           <Route path="/inscription" element={<Inscription />}/>
           <Route path='/connexion' element={<Connexion />}/>
+          <Route path='/editProfil' element={<EditProfil />}/>
         </Routes>
 
         <footer style={{ position: 'fixed', bottom: 0, width: '100%', backgroundColor: '#f8f9fa' }}>

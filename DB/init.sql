@@ -40,9 +40,9 @@ CREATE TABLE IF NOT EXISTS public."user"
 CREATE TABLE IF NOT EXISTS public.user_data
 (
     matricule character varying COLLATE pg_catalog."default" NOT NULL,
-    nom character varying COLLATE pg_catalog."default" NOT NULL,
-    prenom character varying COLLATE pg_catalog."default" NOT NULL,
-    adresse character varying COLLATE pg_catalog."default" NOT NULL,
+    nom character varying COLLATE pg_catalog."default" ,
+    prenom character varying COLLATE pg_catalog."default" ,
+    adresse character varying COLLATE pg_catalog."default",
     CONSTRAINT user_data_pkey PRIMARY KEY (matricule)
 );
 

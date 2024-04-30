@@ -65,7 +65,7 @@ app.get('/getUser', async (req, res) => {
     const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
     const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
     // Recherche des données de l'utilisateur dans la table "user" en fonction du matricule
-    const user = await db.one('SELECT * FROM public."user" WHERE matricule = $1', [matricule]);
+    const user = await db.one('SELECT * FROM user_data WHERE matricule = $1', [matricule]);
 
     // Envoi des données de l'utilisateur dans la réponse
     res.json({ success: true, user });

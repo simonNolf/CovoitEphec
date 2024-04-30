@@ -68,6 +68,14 @@ app.post('/login', async (req, res) => {
           // Enregistrer le nouveau token dans la table token
           await db.none('INSERT INTO public.token (matricule, token, created_at, expires_to) VALUES ($1, $2, NOW(), NOW() + INTERVAL \'1 hour\')', [user.matricule, firstToken]);
 
+          // Vérifier si l'utilisateur a déjà une entrée dans la table user_data
+          const existingUserData = await db.oneOrNone('SELECT * FROM user_data WHERE matricule = $1', [user.matricule]);
+
+          // Insérer dans la table user_data seulement si le matricule n'y est pas encore
+          if (!existingUserData) {
+            await db.none('INSERT INTO user_data (matricule) VALUES ($1)', [user.matricule]);
+          }
+
           // Générer un deuxième token qui contient le premier token dans son payload
           const secondToken = jwt.sign({ firstToken: firstToken }, process.env.TOKEN, { expiresIn: '1h' });
 
@@ -89,6 +97,8 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ success: false, message: 'Erreur lors de la connexion' });
   }
 });
+
+
 
 
 
@@ -130,5 +140,21 @@ app.post('/register', async (req, res) => {
     res.status(500).json({ error: 'Erreur lors de l\'inscription' });
   }
 });
+
+app.post('/insert-user-data', async (req, res) => {
+  const { matricule, nom, prenom, adresse } = req.body;
+
+  try {
+    // Mise à jour des données utilisateur dans la table user_data
+    await db.none('UPDATE user_data SET nom = $2, prenom = $3, adresse = $4 WHERE matricule = $1', [matricule, nom, prenom, adresse]);
+    
+    // Réponse réussie
+    res.status(201).json({ success: true, message: 'Données utilisateur mises à jour avec succès.' });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour des données utilisateur :', error);
+    res.status(500).json({ success: false, error: 'Erreur lors de la mise à jour des données utilisateur.' });
+  }
+});
+
 
 module.exports = app;

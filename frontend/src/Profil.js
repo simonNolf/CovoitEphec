@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const Profil = () => {
-    const [status, setStatus] = useState(null);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
     const matricule = sessionStorage.getItem('matricule');
-    const apiUrl = process.env.REACT_APP_API_URL; // Assurez-vous que cette variable d'environnement est définie dans votre configuration React
-    console.log(matricule)
-
+    const apiUrl = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         if (matricule) {
@@ -13,33 +13,55 @@ const Profil = () => {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'token' : sessionStorage.getItem('token')
+                    'token': sessionStorage.getItem('token')
                 },
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    setStatus(data.user.status);
-                } else {
-                    console.error('Error:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    setLoading(false);
+                    if (data.success) {
+                        setUser(data.user);
+                    } else {
+                        console.error('Error:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        } else {
+            setLoading(false);
         }
     }, [matricule]);
-    
 
     return (
         <div>
             <h1>Page de profil</h1>
-            {status ? (
-                <div>
-                    <p>Votre statut : {status}</p>
-                </div>
-            ) : (
+            {loading ? (
                 <p>Chargement...</p>
+            ) : (
+                <>
+                    {user && user.nom && user.prenom && user.adresse ? (
+                        <div>
+                            <p>Nom: {user.nom}</p>
+                            <p>Prénom: {user.prenom}</p>
+                            <p>Adresse: {user.adresse}</p>
+                            <p>Matricule: {user.matricule}</p>
+                            <Link to="/editProfil">
+                                <button>Modifier le profil</button>
+                            </Link>
+                        </div>
+                    ) : user ? (
+                        <div>
+                            <p>Matricule: {matricule}</p>
+                            <p>Vous n'avez pas encore complété votre profil.</p>
+                            <Link to="/editProfil">
+                                <button>Compléter le profil</button>
+                            </Link>
+                        </div>
+                    ) : (
+                        <p>Aucune donnée d'utilisateur trouvée.</p>
+                    )}
+                </>
             )}
         </div>
     );
