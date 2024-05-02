@@ -22,6 +22,11 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.KEY_SSH }}
 
+    - name: Debug SSH agent
+      run: |
+        ssh-add -l
+        ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} echo "SSH connection successful"
+
     - name: Create .env files on VPS
       run: |
         ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} /bin/bash << 'EOF'
@@ -36,11 +41,9 @@ jobs:
           echo "MAIL=${{ secrets.MAIL }}" >> .env.production
           echo "MDP=${{ secrets.MDP }}" >> .env.production
           echo "TOKEN=${{ secrets.TOKEN}}" >> .env.production
-
           cd ..
           cd ./frontend
           echo "REACT_APP_API_URL=${{ secrets.VITE_API_URL }}" > .env
-
           cd ..
           cd ./DB
           echo "POSTGRES_HOST=${{ secrets.PGHOST }}" > .env
