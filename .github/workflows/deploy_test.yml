@@ -24,7 +24,7 @@ jobs:
 
     - name: Debug SSH agent
       run: |
-        ssh-add -l
+        ssh-add -l 
         ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} echo "SSH connection successful"
 
     - name: Create .env files on VPS
