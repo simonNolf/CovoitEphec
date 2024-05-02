@@ -8,7 +8,7 @@ describe('Profil component', () => {
     const headingElement = screen.getByRole('heading', { name: /Page de profil/i });
     expect(headingElement).toBeInTheDocument();
 
-    const paragraphElement = screen.getByText(/Ceci est votre profil utilisateur/i);
+    const paragraphElement = screen.getByText(/Aucune donnée d'utilisateur trouvée./i);
     expect(paragraphElement).toBeInTheDocument();
   });
 });

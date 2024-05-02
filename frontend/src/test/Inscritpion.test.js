@@ -6,11 +6,14 @@ import InscriptionContainer from '../Inscription';
 
 describe('InscriptionContainer', () => {
   test('renders matricule from query params', () => {
+    sessionStorage.setItem('matricule', '123456');
+
     render(
-      <MemoryRouter initialEntries={['/?matricule=123456']}>
+      <MemoryRouter>
         <InscriptionContainer />
       </MemoryRouter>
     );
+
     expect(screen.getByText(/matricule : 123456/i)).toBeInTheDocument();
   });
 
