@@ -34,7 +34,7 @@ jobs:
     - name: Create .env files on VPS
       run: |
         ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} /bin/bash << 'EOF'
-          cd test/TFE2/backend
+          cd test/CovoitEphec/backend
           echo "PGHOST=${{ secrets.PGHOST }}" > .env.production
           echo "PGUSER=${{ secrets.PGUSER }}" >> .env.production
           echo "PGPASSWORD=${{ secrets.PGPASSWORD }}" >> .env.production
