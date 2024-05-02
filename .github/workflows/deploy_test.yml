@@ -67,7 +67,7 @@ jobs:
     - name: Deploy to VPS
       run: |
         ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} /bin/bash << 'EOF'
-          cd test/TFE2
+          cd test/CovoitEphec
           git pull origin dev-main
           cd frontend
           npm install
