@@ -1,0 +1,48 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SSH_PRIVATE_KEY: ${{ secrets.KEY_SSH }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_IP: ${{ secrets.VPS_IP }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Create .ssh directory and known_hosts file
+      run: |
+        mkdir -p ~/.ssh
+        touch ~/.ssh/known_hosts
+
+    - name: Update known_hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.VPS_IP }} >> ~/.ssh/known_hosts
+
+    - name: webfactory/ssh-agent
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.KEY_SSH }}
+
+    - name: Deploy to VPS
+      run: |
+        ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} /bin/bash << EOF
+          cd TFE2
+          git pull
+          cd frontend
+          npm install
+          ionic build --prod
+          cd ..
+          docker stop serveur_web || true
+          docker rm serveur_web || true
+          docker build -t mon_projet_web .
+          docker run -d -p 80:80 --name serveur_web mon_projet_web
+          exit
+        EOF
