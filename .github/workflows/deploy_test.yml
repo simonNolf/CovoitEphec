@@ -16,11 +16,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-      
-    - name: Debug SSH agent
-      run: |
-        ssh-add -l 
-        ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} echo "SSH connection successful"
 
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.9.0
