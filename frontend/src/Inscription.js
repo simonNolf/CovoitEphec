@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import axios from 'axios';
 
 const isSqlInjectionSafe = (input) => {
     // eslint-disable-next-line no-useless-escape
@@ -53,18 +54,12 @@ const InscriptionContainer = () => {
         setLoading(true);
 
         try {
-            const response = await fetch(`${apiUrl}/users/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    matricule,
-                    password,
-                }),
+            const response = await axios.post(`${apiUrl}/users/register`, {
+                matricule,
+                password,
             });
 
-            if (response.ok) {
+            if (response.status === 200) {
                 setErrorMessage('');
             } else {
                 setErrorMessage('Échec de l\'inscription.');

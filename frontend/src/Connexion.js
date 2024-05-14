@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ConnexionContainer = () => {
   const [password, setPassword] = useState('');
@@ -22,19 +23,13 @@ const ConnexionContainer = () => {
   
     try {
       setLoading(true);
-      const response = await fetch(`${apiUrl}/users/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          matricule,
-          password,
-        }),
+      const response = await axios.post(`${apiUrl}/users/login`, {
+        matricule,
+        password,
       });
   
-      if (response.ok) {
-        const data = await response.json();
+      if (response.status === 200) {
+        const data = response.data;
         
         // Assigne le token au session storage
         sessionStorage.setItem('token', data.token);
@@ -42,7 +37,7 @@ const ConnexionContainer = () => {
         setBackendMessage(data.message);
         navigate("/profil");
       } else {
-        const errorData = await response.json();
+        const errorData = response.data;
         setErrorMessage(errorData.message);
         
         // Afficher le message d'erreur uniquement en dehors des tests

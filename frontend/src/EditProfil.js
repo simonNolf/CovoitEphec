@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function EditProfil() {
   const [nom, setNom] = useState('');
@@ -21,15 +22,9 @@ function EditProfil() {
 
     try {
       // Appel du backend pour insérer les données
-      const response = await fetch(`${apiUrl}/users/insert-user-data`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
+      const response = await axios.post(`${apiUrl}/users/insert-user-data`, data);
 
-      if (response.ok) {
+      if (response.status === 200) {
         // Redirection vers la page de profil en cas de succès
         console.log('Données insérées avec succès.');
         navigate('/profil');

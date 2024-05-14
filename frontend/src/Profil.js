@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Profil = () => {
     const [user, setUser] = useState(null);
@@ -10,24 +11,23 @@ const Profil = () => {
 
     useEffect(() => {
         if (matricule && token) {
-            fetch(`${apiUrl}/getUser`, {
-                method: 'GET',
+            axios.get(`${apiUrl}/getUser`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'token': token
                 },
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        setUser(data.user);
-                    } else {
-                        console.error('Error:', data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+            .then(response => {
+                const data = response.data;
+                if (data.success) {
+                    setUser(data.user);
+                } else {
+                    console.error('Error:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
     }, [matricule, token, apiUrl]);
 
