@@ -55,7 +55,7 @@ app.get('/activate/:matricule', async (req, res) => {
 
 app.get('/getUser', async (req, res) => {
   const receivedToken = req.headers.token; // Récupérer le token de l'en-tête
-  
+
   if (!receivedToken) {
     return res.status(401).json({ success: false, message: 'Token non valide' });
   }
@@ -64,6 +64,7 @@ app.get('/getUser', async (req, res) => {
     // Décryptage du token reçu pour obtenir le matricule
     const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
     const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+
     // Recherche des données de l'utilisateur dans la table "user" en fonction du matricule
     const user = await db.one('SELECT * FROM user_data WHERE matricule = $1', [matricule]);
 
@@ -71,8 +72,13 @@ app.get('/getUser', async (req, res) => {
     res.json({ success: true, user });
   } catch (error) {
     console.error('Error:', error);
-    res.status(404).json({ success: false, message: 'User not found for the given token' });
+    if (error.message === 'Invalid token') {
+      res.status(401).json({ success: false, message: 'Token non valide' });
+    } else {
+      res.status(404).json({ success: false, message: 'User not found for the given token' });
+    }
   }
 });
+
 
 module.exports = app;

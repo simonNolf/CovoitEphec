@@ -4,13 +4,14 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "jest",
+        "test": "jest ",
         "start": "nodemon app.js"
     },
     "author": "",
     "license": "ISC",
     "devDependencies": {
         "jest": "^29.7.0",
+        "jest-extended": "^4.0.2",
         "pg": "^8.11.3",
         "supertest": "^6.3.4"
     },
