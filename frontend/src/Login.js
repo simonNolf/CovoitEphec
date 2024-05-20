@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 
 const LoginComponent = () => {
   const [matricule, setMatricule] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate(); // Utilisez useNavigate au lieu de useHistory
+  const navigate = useNavigate();
   const location = useLocation();
   const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -24,8 +23,11 @@ const LoginComponent = () => {
   async function fetchCSVData() {
     const csvUrl = 'data.csv';
     try {
-      const response = await axios.get(csvUrl);
-      return response.data;
+      const response = await fetch(csvUrl);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return await response.text();
     } catch (error) {
       console.error('Erreur lors de la récupération du fichier CSV :', error);
       throw error;
@@ -45,8 +47,8 @@ const LoginComponent = () => {
 
   async function checkMatriculeInDB(matriculeToCheck) {
     try {
-      const response = await axios.get(`${apiUrl}/users/${matriculeToCheck}`);
-      return response.status === 200;
+      const response = await fetch(`${apiUrl}/users/${matriculeToCheck}`);
+      return response.ok;
     } catch (error) {
       console.error('Erreur lors de la vérification du matricule dans la base de données :', error);
       return false;

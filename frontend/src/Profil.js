@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 
 const Profil = () => {
     const [user, setUser] = useState(null);
     const matricule = sessionStorage.getItem('matricule');
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (matricule && token) {
-            axios.get(`${apiUrl}/getUser`, {
+            fetch(`${apiUrl}/getUser`, {
+                method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'token': token
+                    'token': token,
                 },
             })
-            .then(response => {
-                const data = response.data;
+            .then(response => response.json())
+            .then(data => {
                 if (data.success) {
                     setUser(data.user);
                 } else {
