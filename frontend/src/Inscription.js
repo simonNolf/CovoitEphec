@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 
 const isSqlInjectionSafe = (input) => {
     // eslint-disable-next-line no-useless-escape
@@ -19,7 +18,6 @@ const InscriptionContainer = () => {
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const apiUrl = process.env.REACT_APP_API_URL;
-    const location = useLocation();
 
     useEffect(() => {
         // Récupérer le matricule depuis le sessionStorage

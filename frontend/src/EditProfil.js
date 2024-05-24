@@ -5,18 +5,40 @@ function EditProfil() {
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const [adresse, setAdresse] = useState('');
+  const [errors, setErrors] = useState({});
   const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
+
+  // Fonction pour assainir les entrées et éviter les injections SQL
+  const sanitizeInput = (input) => {
+    return input.replace(/['";]/g, '');
+  };
+
+  // Fonction pour valider les champs de formulaire
+  const validateFields = () => {
+    const errors = {};
+    if (!nom.trim()) errors.nom = 'Le champ Nom ne peut pas être vide.';
+    if (!prenom.trim()) errors.prenom = 'Le champ Prénom ne peut pas être vide.';
+    if (!adresse.trim()) errors.adresse = 'Le champ Adresse ne peut pas être vide.';
+    return errors;
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    // Validation des champs de formulaire
+    const validationErrors = validateFields();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     // Création de l'objet de données à envoyer au backend
     const data = {
       matricule: sessionStorage.getItem('matricule'),
-      nom: nom,
-      prenom: prenom,
-      adresse: adresse
+      nom: sanitizeInput(nom),
+      prenom: sanitizeInput(prenom),
+      adresse: sanitizeInput(adresse)
     };
 
     try {
@@ -55,6 +77,7 @@ function EditProfil() {
               onChange={(e) => setNom(e.target.value)}
             />
           </label>
+          {errors.nom && <p style={{ color: 'red' }}>{errors.nom}</p>}
         </div>
         <div>
           <label>
@@ -65,6 +88,7 @@ function EditProfil() {
               onChange={(e) => setPrenom(e.target.value)}
             />
           </label>
+          {errors.prenom && <p style={{ color: 'red' }}>{errors.prenom}</p>}
         </div>
         <div>
           <label>
@@ -75,6 +99,7 @@ function EditProfil() {
               onChange={(e) => setAdresse(e.target.value)}
             />
           </label>
+          {errors.adresse && <p style={{ color: 'red' }}>{errors.adresse}</p>}
         </div>
         <button type="submit">Enregistrer</button>
       </form>

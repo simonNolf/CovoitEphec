@@ -6,6 +6,8 @@ import Login from './Login';
 import Inscription from "./Inscription"
 import Connexion from './Connexion'
 import EditProfil from './EditProfil'
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from 'react-toastify';
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
       </li>
     </ul>
   </nav>
+  <ToastContainer />
 </footer>
 
       </div>

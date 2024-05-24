@@ -1,24 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const LoginComponent = () => {
   const [matricule, setMatricule] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const apiUrl = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
-    const storedMatricule = sessionStorage.getItem('matricule');
-    if (storedMatricule) {
-      setMatricule(storedMatricule);
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      setIsLoggedIn(true);
+      toast.info('Vous êtes déjà connecté');
+      setTimeout(() => {
+        navigate('/Profil');
+      }, 0);
     } else {
-      const searchParams = new URLSearchParams(location.search);
-      const matriculeFromQuery = searchParams.get('matricule');
-      setMatricule(matriculeFromQuery || '');
+      const storedMatricule = sessionStorage.getItem('matricule');
+      if (storedMatricule) {
+        setMatricule(storedMatricule);
+      } else {
+        const searchParams = new URLSearchParams(location.search);
+        const matriculeFromQuery = searchParams.get('matricule');
+        setMatricule(matriculeFromQuery || '');
+      }
     }
-  }, [location.search]);
+  }, [location.search, navigate]);
 
   async function fetchCSVData() {
     const csvUrl = 'data.csv';
@@ -65,10 +76,10 @@ const LoginComponent = () => {
 
       if (matriculeExistsInCSV && matriculeExistsInDB) {
         sessionStorage.setItem('matricule', matricule);
-        navigate("/connexion");
+        navigate('/connexion');
       } else if (matriculeExistsInCSV) {
         sessionStorage.setItem('matricule', matricule);
-        navigate("/inscription");
+        navigate('/inscription');
       } else {
         setErrorMessage(`Le matricule : ${matricule} n'existe pas`);
       }
@@ -84,16 +95,16 @@ const LoginComponent = () => {
       {loading && <div>Vérification en cours...</div>}
       <form className="centered-container" onSubmit={handleSubmit}>
         <input
-          id='matricule'
+          id="matricule"
           required
           value={matricule}
           maxLength={8}
           minLength={8}
-          placeholder='votre matricule'
+          placeholder="votre matricule"
           onChange={(e) => setMatricule(e.target.value)}
         />
         {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-        <button type='submit'>Suivant</button>
+        <button type="submit">Suivant</button>
       </form>
     </>
   );
