@@ -34,6 +34,10 @@ const Profil = () => {
     const handleLoginRedirect = () => {
         navigate('/login');
     };
+    function deconnexion() {
+        sessionStorage.removeItem('token')
+        sessionStorage.removeItem('matricule')
+    }
 
     return (
         <div>
@@ -46,6 +50,9 @@ const Profil = () => {
                     <p>Matricule: {user.matricule}</p>
                     <Link to="/editProfil">
                         <button>Modifier le profil</button>
+                    </Link>
+                    <Link to="/">
+                    <button onClick={deconnexion()}>Déconnexion</button>
                     </Link>
                 </div>
             ) : matricule && token ? (
