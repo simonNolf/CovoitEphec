@@ -62,8 +62,10 @@ jobs:
 
     - name: stop containers
       run: |
-        cd test/CovoitEphec
-        docker-compose down
+        ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} /bin/bash << 'EOF'
+          cd test/CovoitEphec
+          docker-compose down
+        EOF
 
 
     - name: Create Docker network
