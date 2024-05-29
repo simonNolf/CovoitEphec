@@ -77,8 +77,5 @@ jobs:
         ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} /bin/bash << 'EOF'
           cd test/CovoitEphec
           git pull origin dev-main
-          cd frontend
-          npm install
-          cd ..
           docker-compose up -d -- build
         EOF
