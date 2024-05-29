@@ -62,7 +62,7 @@ jobs:
 
     - name: stop containers
       run: |
-        cd /test/CovoitEphec
+        cd test/CovoitEphec
         docker-compose down
 
 
