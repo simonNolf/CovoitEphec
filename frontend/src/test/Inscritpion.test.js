@@ -1,6 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import InscriptionContainer from '../Inscription';
 
@@ -23,7 +22,7 @@ describe('InscriptionContainer', () => {
         <InscriptionContainer />
       </MemoryRouter>
     );
-  
+
     // Simuler le remplissage du formulaire
     fireEvent.change(screen.getByPlaceholderText(/votre mot de passe/i), {
       target: { value: 'Password123#' },
@@ -31,11 +30,11 @@ describe('InscriptionContainer', () => {
     fireEvent.change(screen.getByPlaceholderText(/confirmer le mot de passe/i), {
       target: { value: 'Password123#' },
     });
-  
+
     // Simuler la soumission du formulaire
     fireEvent.click(screen.getByText(/s'inscrire/i));
-  
-    // Vérifier si le message d'erreur est affiché
+
+    // Vérifier si le message d'erreur n'est pas affiché
     expect(screen.queryByText('Erreur lors de l\'inscription.')).toBeNull();
   });
 
@@ -45,7 +44,7 @@ describe('InscriptionContainer', () => {
         <InscriptionContainer />
       </MemoryRouter>
     );
-  
+
     // Simuler le remplissage du formulaire
     fireEvent.change(screen.getByPlaceholderText(/votre mot de passe/i), {
       target: { value: 'Password123#' },
@@ -53,54 +52,54 @@ describe('InscriptionContainer', () => {
     fireEvent.change(screen.getByPlaceholderText(/confirmer le mot de passe/i), {
       target: { value: 'Password123' }, // Ce mot de passe ne correspond pas
     });
-  
+
     // Simuler la soumission du formulaire
     fireEvent.click(screen.getByText(/s'inscrire/i));
-  
+
     // Vérifier si le message d'erreur est affiché
-    expect(screen.queryByText('Les mots de passe ne correspondent pas.')).toBeInTheDocument();
+    expect(screen.getByText('Les mots de passe ne correspondent pas.')).toBeInTheDocument();
   });
-  
+
   test('shows error message for SQL injection', () => {
     render(
       <MemoryRouter>
         <InscriptionContainer />
       </MemoryRouter>
     );
-  
+
     fireEvent.change(screen.getByPlaceholderText(/votre mot de passe/i), {
       target: { value: 'Password123\'' },
     });
-  
+
     fireEvent.change(screen.getByPlaceholderText(/confirmer le mot de passe/i), {
       target: { value: 'Password123\'' },
     });
-  
+
     fireEvent.submit(screen.getByRole('button', { name: /s'inscrire/i }));
-  
+
     // Vérifier si le message d'erreur est affiché
     expect(screen.getByText('Potentielle injection SQL')).toBeInTheDocument();
   });
-  
+
   test('shows error message for weak password', () => {
     render(
       <MemoryRouter>
         <InscriptionContainer />
       </MemoryRouter>
     );
-  
+
     fireEvent.change(screen.getByPlaceholderText(/votre mot de passe/i), {
       target: { value: 'password' }, // Mot de passe faible
     });
-  
+
     fireEvent.change(screen.getByPlaceholderText(/confirmer le mot de passe/i), {
       target: { value: 'password' }, // Mot de passe faible
     });
-  
+
     fireEvent.submit(screen.getByRole('button', { name: /s'inscrire/i }));
-  
+
     // Vérifier si le message d'erreur est affiché
     expect(screen.getByText(/prérequis de sécurité/i)).toBeInTheDocument();
   });
-  
+
 });

@@ -1,7 +1,5 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect'; // Importer jest-dom pour les matchers personnalisés
-
 import Acceuil from '../Acceuil';
 
 describe('Acceuil', () => {

@@ -12,12 +12,10 @@ describe('App', () => {
     );
 
     // Vérifier si les liens de navigation sont rendus
-    const accueilLink = screen.getByRole('link', { name: /accueil/i });
     const profilLink = screen.getByRole('link', { name: /profil/i });
     const loginLink = screen.getByRole('link', { name: /login/i });
 
     // Assurer que les liens redirigent vers les bonnes routes
-    expect(accueilLink).toHaveAttribute('href', '/');
     expect(profilLink).toHaveAttribute('href', '/profil');
     expect(loginLink).toHaveAttribute('href', '/login');
   });

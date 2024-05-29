@@ -60,6 +60,14 @@ jobs:
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD}}" >> .env
         EOF
 
+    - name: stop containers
+      run: |
+        ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} /bin/bash << 'EOF'
+          cd test/CovoitEphec
+          docker-compose down
+        EOF
+
+
     - name: Create Docker network
       run: |
         docker network create my_network
@@ -72,6 +80,5 @@ jobs:
           cd frontend
           npm install
           cd ..
-          docker-compose down
           docker-compose up -d -- build
         EOF
