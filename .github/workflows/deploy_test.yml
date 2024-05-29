@@ -60,6 +60,11 @@ jobs:
           echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD}}" >> .env
         EOF
 
+    - name: stop containers
+      run: |
+        docker-compose down
+
+
     - name: Create Docker network
       run: |
         docker network create my_network
@@ -72,6 +77,5 @@ jobs:
           cd frontend
           npm install
           cd ..
-          docker-compose down
           docker-compose up -d -- build
         EOF
