@@ -35,6 +35,8 @@ const ConnexionContainer = () => {
         
         // Assigne le token au session storage
         sessionStorage.setItem('token', data.token);
+        // Met à jour le matricule après la connexion réussie
+        setMatricule(matricule);
         
         setBackendMessage(data.message);
         navigate("/profil");

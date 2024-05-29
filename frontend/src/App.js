@@ -6,6 +6,7 @@ import Login from './Login';
 import Inscription from "./Inscription"
 import Connexion from './Connexion'
 import EditProfil from './EditProfil'
+import Covoiturage from './Covoiturage'
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer, toast } from 'react-toastify';
 
@@ -20,19 +21,20 @@ function App() {
           <Route path="/inscription" element={<Inscription />}/>
           <Route path='/connexion' element={<Connexion />}/>
           <Route path='/editProfil' element={<EditProfil />}/>
+          <Route path='/covoiturage' element={<Covoiturage />}/>
         </Routes>
 
         <footer style={{ position: 'fixed', bottom: 0, width: '100%', backgroundColor: '#f8f9fa' }}>
   <nav>
     <ul style={{ display: 'flex', justifyContent: 'space-around', listStyleType: 'none', padding: 0 }}>
       <li>
-        <Link to="/">Accueil</Link>
-      </li>
-      <li>
         <Link to="/profil">Profil</Link>
       </li>
       <li>
         <Link to="/login">Login</Link>
+      </li>
+      <li>
+        <Link to="/covoiturage">Covoiturage</Link>
       </li>
     </ul>
   </nav>
