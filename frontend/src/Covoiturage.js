@@ -3,24 +3,29 @@ import { useNavigate } from 'react-router-dom';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 
-
 const CovoituragePage = () => {
     const [proposition, setProposition] = useState([]);
     const [alertOpen, setAlertOpen] = useState(null);
     const [user, setUser] = useState(true);
     const [approbation, setApprobation] = useState([]);
-    const [chargement, setChargement] = useState(true);
+    const [address, setAddress] = useState('');
+    const [coordinates, setCoordinates] = useState(null);
     const navigate = useNavigate();
     const apiUrl = process.env.REACT_APP_API_URL || '';
-    const apiMaps = process.env.MAPS_API_KEY
+    const apiMaps = process.env.REACT_APP_MAPS_API_KEY;
     const token = sessionStorage.getItem('token');
 
-
     useEffect(() => {
+        checkToken();
         fetchUsers();
-        fetchProposition();
-        fetchApprobation();
     }, []);
+
+    const checkToken = () => {
+        if (!token) {
+            toast.error('Merci de vous connecter');
+            navigate('/login');
+        }
+    };
 
     const fetchUsers = async () => {
         try {
@@ -37,49 +42,37 @@ const CovoituragePage = () => {
         }
     };
 
-    const fetchProposition = async () => {
+    const geocodeAddress = async (address) => {
         try {
-            const res = await fetch(`${apiUrl}/getProposition`, {
-                headers: {
-                    'Content-type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('token') || ''}`,
-                },
-            });
-            const data = await res.json();
-            if (res.status === 200) {
-                setProposition(data.rows);
+            const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiMaps}`);
+            const data = await response.json();
+            if (data.status === 'OK') {
+                const location = data.results[0].geometry.location;
+                setCoordinates(location);
+                console.log(location)
+            } else {
+                toast.error('Erreur lors de la géocodage de l\'adresse');
             }
         } catch (error) {
-            console.error('Erreur lors de la récupération des propositions:', error);
+            console.error('Erreur lors de la géocodage de l\'adresse:', error);
+            toast.error('Erreur lors de la géocodage de l\'adresse');
         }
     };
 
-    const fetchApprobation = async () => {
-        try {
-            const res = await fetch(`${apiUrl}/getPropositionCovoit`, {
-                headers: {
-                    'Content-type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('token') || ''}`,
-                },
-            });
-            const data = await res.json();
-            if (res.status === 200) {
-                setApprobation(data.rows);
-            }
-        } catch (error) {
-            console.error('Erreur lors de la récupération des approbations:', error);
+    const handleAddressChange = (e) => {
+        const newAddress = e.target.value;
+        setAddress(newAddress); // Met à jour l'état de l'adresse
+        if (newAddress) {
+            geocodeAddress(newAddress); // Appel à geocodeAddress pour mettre à jour les coordonnées
         }
     };
-
-    const checkToken = () => {
-        const token = sessionStorage.getItem('token');
-        if (!token) {
-            toast.error('Merci de vous connecter');
-            return <navigate to="/login" />;
-        }
-    };
-
     
+
+    const handleAddressBlur = () => {
+        if (address) {
+            geocodeAddress(address);
+        }
+    };
 
     return (
         <div>
@@ -95,60 +88,32 @@ const CovoituragePage = () => {
                 </div>
                 <div>
                     <label htmlFor="address">Adresse:</label>
-                    <input type="text" id="address" name="address" />
+                    <input 
+                        type="text" 
+                        id="address" 
+                        name="address" 
+                        value={address} 
+                        onChange={handleAddressChange} 
+                        onBlur={handleAddressBlur}
+                    />
                 </div>
                 <button type="submit">Soumettre</button>
             </form>
-            {/* Affichage des propositions de covoiturage */}
-            {proposition.map((item) => (
-                <div key={item.id}>
-                    <p>Date: {item.date?.substr(0, 10)}</p>
-                    <p>Adresse: {item.arret}</p>
-                    <p>Heure: {item.date?.substr(11, 5)}</p>
-                    {/* Bouton pour afficher les détails */}
-                    <button onClick={() => setAlertOpen(item.id)}>Info</button>
-                    {/* Alert pour afficher les détails */}
-                    {alertOpen === item.id && (
-                        <div>
-                            <p>Détails de la proposition:</p>
-                            <p>ID: {item.id}</p>
-                            <p>Conducteur: {item.conducteur}</p>
-                            <p>Latitude: {item.latitude}</p>
-                            <p>Longitude: {item.longitude}</p>
-                            {/* Ajoutez plus de détails ici */}
-                            <LoadScript googleMapsApiKey={apiMaps}>
-                                <GoogleMap
-                                    mapContainerStyle={{ height: "400px", width: "800px" }}
-                                    center={{ lat: item.latitude, lng: item.longitude }}
-                                    zoom={10}
-                                >
-                                    <Marker position={{ lat: item.latitude, lng: item.longitude }} />
-                                </GoogleMap>
-                            </LoadScript>
-                            <button onClick={() => setAlertOpen(null)}>Fermer</button>
-                        </div>
-                    )}
+            {coordinates ? (
+                <div style={{ height: '400px', width: '100%' }}>
+                    <LoadScript googleMapsApiKey={apiMaps}>
+                        <GoogleMap
+                            mapContainerStyle={{ height: '100%', width: '100%' }}
+                            center={coordinates}
+                            zoom={15}
+                            onLoad={() => console.log('GoogleMap loaded')}
+                        >
+                            <Marker position={coordinates} />
+                        </GoogleMap>
+                    </LoadScript>
                 </div>
-            ))}
-            {/* Affichage des propositions d'approbation */}
-            {user ? (
-                <div>
-                    <h2>Propositions d'approbation</h2>
-                    {approbation.map((item) => (
-                        <div key={item.id}>
-                            <p>Date: {item.date?.substr(0, 10)}</p>
-                            <p>Adresse: {item.arret}</p>
-                            <p>Heure: {item.date?.substr(11, 5)}</p>
-                            {/* Ajoutez plus de détails ici */}
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div>
-                    <h2>Propositions de passager</h2>
-                    {/* Affichage des propositions de passager */}
-                </div>
-            )}
+            ) : null}
+            
         </div>
     );
 };

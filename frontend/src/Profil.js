@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const Profil = () => {
     const [user, setUser] = useState(null);
@@ -7,6 +8,17 @@ const Profil = () => {
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
     const navigate = useNavigate();
+
+    useEffect(() => {
+        checkToken();
+    }, []);
+
+    const checkToken = () => {
+        if (!token) {
+            toast.error('Merci de vous connecter');
+            navigate('/login');
+        }
+    };
 
     useEffect(() => {
         if (matricule && token) {
@@ -31,14 +43,9 @@ const Profil = () => {
         }
     }, [matricule, token, apiUrl]);
 
-    const handleLoginRedirect = () => {
-        navigate('/login');
-    };
-
     const deconnexion = () => {
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('matricule');
-        // Rediriger vers la page de connexion après la déconnexion
         navigate('/login');
     };
 
@@ -64,12 +71,7 @@ const Profil = () => {
                         <button>Compléter le profil</button>
                     </Link>
                 </div>
-            ) : (
-                <div>
-                    <p>Vous devez vous connecter pour accéder à cette page.</p>
-                    <button onClick={handleLoginRedirect}>Se connecter</button>
-                </div>
-            )}
+            ) : null}
         </div>
     );
 };

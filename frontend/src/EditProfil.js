@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
 
 function EditProfil() {
   const [nom, setNom] = useState('');
@@ -54,6 +56,7 @@ function EditProfil() {
       if (response.ok) {
         // Redirection vers la page de profil en cas de succès
         console.log('Données insérées avec succès.');
+        toast.success('ajout de donées réussie');
         navigate('/profil');
       } else {
         // Traitement en cas d'erreur
