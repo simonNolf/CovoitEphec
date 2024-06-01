@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-
 function EditProfil() {
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const [adresse, setAdresse] = useState('');
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
   const [errors, setErrors] = useState({});
-  const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
+  const apiUrl = process.env.REACT_APP_API_URL;
 
   // Fonction pour assainir les entrées et éviter les injections SQL
   const sanitizeInput = (input) => {
@@ -35,35 +36,48 @@ function EditProfil() {
       return;
     }
 
-    // Création de l'objet de données à envoyer au backend
-    const data = {
-      matricule: sessionStorage.getItem('matricule'),
-      nom: sanitizeInput(nom),
-      prenom: sanitizeInput(prenom),
-      adresse: sanitizeInput(adresse)
-    };
-
     try {
-      // Appel du backend pour insérer les données
-      const response = await fetch(`${apiUrl}/users/insert-user-data`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      // Appel de l'API Nominatim pour géocoder l'adresse
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(adresse)}`);
+      const data = await response.json();
 
-      if (response.ok) {
-        // Redirection vers la page de profil en cas de succès
-        console.log('Données insérées avec succès.');
-        toast.success('ajout de donées réussie');
-        navigate('/profil');
+      if (data.length > 0) {
+        // Adresse valide, enregistrement des coordonnées
+        setLatitude(data[0].lat);
+        setLongitude(data[0].lon);
+
+        // Création de l'objet de données à envoyer au backend
+        const postData = {
+          matricule: sessionStorage.getItem('matricule'),
+          nom: sanitizeInput(nom),
+          prenom: sanitizeInput(prenom),
+          latitude: data[0].lat,
+          longitude: data[0].lon
+        };
+
+        const backendResponse = await fetch(`${apiUrl}/users/insert-user-data`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(postData),
+        });
+  
+        if (backendResponse.ok) {
+          // Redirection vers la page de profil en cas de succès
+          console.log('Données insérées avec succès.');
+          toast.success('ajout de données réussie');
+          navigate('/profil');
+        } else {
+          // Traitement en cas d'erreur lors de l'insertion des données
+          console.error('Erreur lors de l\'insertion des données.');
+        }
       } else {
-        // Traitement en cas d'erreur
-        console.error('Erreur lors de l\'insertion des données.');
+        // Adresse invalide, affichage de l'erreur
+        setErrors({ adresse: 'Adresse invalide. Veuillez saisir une adresse valide.' });
       }
     } catch (error) {
-      console.error('Erreur lors de l\'appel de l\'API :', error);
+      console.error('Erreur lors de l\'appel de l\'API Nominatim :', error);
     }
   };
 

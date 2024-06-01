@@ -146,11 +146,11 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/insert-user-data', async (req, res) => {
-  const { matricule, nom, prenom, adresse } = req.body;
+  const { matricule, nom, prenom, latitude, longitude } = req.body;
 
   try {
-
-    await db.none('UPDATE  user_data SET nom= $2, prenom = $3,adresse = $4 where matricule = $1', [matricule, nom, prenom, adresse]);
+    // Mettre à jour les données utilisateur avec les coordonnées de latitude et de longitude en tant que type POINT
+    await db.none('UPDATE user_data SET nom = $2, prenom = $3, adresse = POINT($4, $5) WHERE matricule = $1', [matricule, nom, prenom, longitude, latitude]);
     
     // Réponse réussie
     res.status(201).json({ success: true, message: 'Données utilisateur insérées avec succès.' });

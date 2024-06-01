@@ -63,7 +63,7 @@ const CovoituragePage = () => {
         const newAddress = e.target.value;
         setAddress(newAddress); // Met à jour l'état de l'adresse
         if (newAddress) {
-            geocodeAddress(newAddress); // Appel à geocodeAddress pour mettre à jour les coordonnées
+            geocodeAddress(newAddress); 
         }
     };
     
@@ -93,7 +93,6 @@ const CovoituragePage = () => {
                         id="address" 
                         name="address" 
                         value={address} 
-                        onChange={handleAddressChange} 
                         onBlur={handleAddressBlur}
                     />
                 </div>
