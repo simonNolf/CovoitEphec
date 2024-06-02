@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { checkTokenExpiration } from './utils/tokenUtils';
+import { toast } from 'react-toastify';
 
 const ConnexionContainer = () => {
   const [password, setPassword] = useState('');
@@ -7,7 +9,7 @@ const ConnexionContainer = () => {
   const [matricule, setMatricule] = useState('');
   const [backendMessage, setBackendMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const apiUrl = process.env.REACT_APP_API_URL; // Assurez-vous que cette variable d'environnement est définie dans votre configuration React
+  const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,19 +34,16 @@ const ConnexionContainer = () => {
 
       if (response.ok) {
         const data = await response.json();
-        
-        // Assigne le token au session storage
+        const expirationTime = new Date().getTime() + 3600000; // 1 heure en millisecondes
         sessionStorage.setItem('token', data.token);
-        // Met à jour le matricule après la connexion réussie
+        sessionStorage.setItem('tokenExpiration', expirationTime);
         setMatricule(matricule);
-        
         setBackendMessage(data.message);
         navigate("/profil");
       } else {
         const errorData = await response.json();
         setErrorMessage(errorData.message);
         
-        // Afficher le message d'erreur uniquement en dehors des tests
         if (process.env.NODE_ENV !== 'test') {
           console.error(errorData.message);
         }
@@ -58,6 +57,18 @@ const ConnexionContainer = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const handleTokenExpiration = () => {
+      toast.error('Votre session a expiré');
+      navigate('/login');
+    };
+
+    if (checkTokenExpiration(handleTokenExpiration)) {
+      // Le token est expiré et l'utilisateur a été redirigé
+      return;
+    }
+  }, [navigate]);
 
   return (
     <>

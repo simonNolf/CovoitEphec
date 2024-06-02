@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { checkTokenExpiration } from './utils/tokenUtils';
 
 const Profil = () => {
     const [user, setUser] = useState(null);
@@ -11,13 +12,23 @@ const Profil = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        const handleTokenExpiration = () => {
+            toast.error('Votre session a expiré');
+            navigate('/login');
+        };
+
+        if (checkTokenExpiration(handleTokenExpiration)) {
+            // Le token est expiré et l'utilisateur a été redirigé
+            return;
+        }
+
         if (!token) {
             toast.error('Merci de vous connecter');
             navigate('/login');
         } else {
             fetchUserData();
         }
-    }, [token, matricule]);
+    }, [token, matricule, navigate]);
 
     const fetchUserData = async () => {
         try {

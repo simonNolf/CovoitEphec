@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { checkTokenExpiration } from './utils/tokenUtils';
 
 function EditProfil() {
   const [nom, setNom] = useState('');
@@ -12,12 +13,21 @@ function EditProfil() {
   const navigate = useNavigate();
   const apiUrl = process.env.REACT_APP_API_URL;
 
-  // Fonction pour assainir les entrées et éviter les injections SQL
+  useEffect(() => {
+    const handleTokenExpiration = () => {
+      toast.error('Votre session a expiré');
+      navigate('/login');
+    };
+
+    if (checkTokenExpiration(handleTokenExpiration)) {
+      return;
+    }
+  }, [navigate]);
+
   const sanitizeInput = (input) => {
     return input.replace(/['";]/g, '');
   };
 
-  // Fonction pour valider les champs de formulaire
   const validateFields = () => {
     const errors = {};
     if (!nom.trim()) errors.nom = 'Le champ Nom ne peut pas être vide.';
@@ -28,8 +38,6 @@ function EditProfil() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    // Validation des champs de formulaire
     const validationErrors = validateFields();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -37,16 +45,13 @@ function EditProfil() {
     }
 
     try {
-      // Appel de l'API Nominatim pour géocoder l'adresse
       const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(adresse)}`);
       const data = await response.json();
 
       if (data.length > 0) {
-        // Adresse valide, enregistrement des coordonnées
         setLatitude(data[0].lat);
         setLongitude(data[0].lon);
 
-        // Création de l'objet de données à envoyer au backend
         const postData = {
           matricule: sessionStorage.getItem('matricule'),
           nom: sanitizeInput(nom),
@@ -62,22 +67,22 @@ function EditProfil() {
           },
           body: JSON.stringify(postData),
         });
-  
+
         if (backendResponse.ok) {
-          // Redirection vers la page de profil en cas de succès
           console.log('Données insérées avec succès.');
-          toast.success('ajout de données réussie');
+          toast.success('Ajout de données réussie');
           navigate('/profil');
         } else {
-          // Traitement en cas d'erreur lors de l'insertion des données
           console.error('Erreur lors de l\'insertion des données.');
+          toast.error('Erreur lors de l\'insertion des données');
         }
       } else {
-        // Adresse invalide, affichage de l'erreur
         setErrors({ adresse: 'Adresse invalide. Veuillez saisir une adresse valide.' });
+        toast.error('Adresse invalide. Veuillez saisir une adresse valide.');
       }
     } catch (error) {
       console.error('Erreur lors de l\'appel de l\'API Nominatim :', error);
+      toast.error('Erreur lors de l\'appel de l\'API Nominatim');
     }
   };
 
