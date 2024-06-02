@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom'; 
 import Accueil from './Acceuil';
 import Profil from './Profil';
 import Login from './Login';
@@ -7,7 +8,7 @@ import Inscription from './Inscription';
 import Connexion from './Connexion';
 import EditProfil from './EditProfil';
 import Covoiturage from './Covoiturage';
-import Logout from './Logout'; 
+import Logout from './Logout'; // Importer Logout
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 

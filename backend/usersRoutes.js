@@ -146,19 +146,29 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/updateUser', async (req, res) => {
-  const { matricule, nom, prenom, latitude, longitude } = req.body;
+  const { matricule, nom, prenom, latitude, longitude, isDriver } = req.body;
 
   try {
-    // Mettre à jour les données utilisateur avec les coordonnées de latitude et de longitude en tant que type POINT
     await db.none('UPDATE user_data SET nom = $2, prenom = $3, adresse = POINT($4, $5) WHERE matricule = $1', [matricule, nom, prenom, longitude, latitude]);
     
-    // Réponse réussie
-    res.status(201).json({ success: true, message: 'Données utilisateur insérées avec succès.' });
+    const existingUserRole = await db.oneOrNone('SELECT * FROM user_role WHERE matricule = $1', [matricule]);
+
+    if (existingUserRole) {
+      if (existingUserRole.id_role !== 3) { 
+        await db.none('UPDATE user_role SET id_role = $2 WHERE matricule = $1', [matricule, isDriver ? 2 : 1]);
+      }
+    } else {
+      await db.none('INSERT INTO user_role (matricule, id_role) VALUES ($1, $2)', [matricule, isDriver ? 2 : 1]);
+    }
+
+    res.status(201).json({ success: true, message: 'Données utilisateur mises à jour avec succès.' });
   } catch (error) {
-    console.error('Erreur lors de l\'insertion des données utilisateur :', error);
-    res.status(500).json({ success: false, error: 'Erreur lors de l\'insertion des données utilisateur.' });
+    console.error('Erreur lors de la mise à jour des données utilisateur :', error);
+    res.status(500).json({ success: false, error: 'Erreur lors de la mise à jour des données utilisateur.' });
   }
 });
+
+
 
 
 
