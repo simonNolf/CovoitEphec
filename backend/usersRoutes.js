@@ -145,7 +145,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-app.post('/insert-user-data', async (req, res) => {
+app.post('/updateUser', async (req, res) => {
   const { matricule, nom, prenom, latitude, longitude } = req.body;
 
   try {

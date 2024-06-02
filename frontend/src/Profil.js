@@ -18,7 +18,6 @@ const Profil = () => {
         };
 
         if (checkTokenExpiration(handleTokenExpiration)) {
-            // Le token est expiré et l'utilisateur a été redirigé
             return;
         }
 
@@ -67,6 +66,7 @@ const Profil = () => {
                 const { road, house_number, postcode, town } = data.address;
                 const formattedAddress = `${road}, ${house_number}, ${postcode} ${town}`;
                 setDecodedAddress(formattedAddress);
+                
             } else {
                 setDecodedAddress('Adresse non disponible');
             }
@@ -82,16 +82,31 @@ const Profil = () => {
         navigate('/login');
     };
 
+    const allFieldsFilled = user?.nom && user?.prenom && decodedAddress;
+    if (allFieldsFilled) {localStorage.setItem('adresse', decodedAddress);
+    localStorage.setItem('nom', user.nom);
+    localStorage.setItem('prenom', user.prenom);}
+
     return (
         <div>
             <h1>Page de profil</h1>
             {user ? (
                 <div>
-                    <p>Nom: {user.nom}</p>
-                    <p>Prénom: {user.prenom}</p>
-                    <p>Adresse: {decodedAddress}</p>
+                    {allFieldsFilled ? (
+                        <>
+                            <p>Nom: {user.nom}</p>
+                            <p>Prénom: {user.prenom}</p>
+                            <p>Adresse: {decodedAddress}</p>
+                        </>
+                    ) : (
+                        <p>Merci de compléter toutes les informations de profil.</p>
+                    )}
                     <p>Matricule: {user.matricule}</p>
-                    <Link to="/editProfil">
+                    <Link
+                        to={{
+                            pathname: '/editProfil',
+                        }}
+                    >
                         <button>Modifier le profil</button>
                     </Link>
                     <button onClick={deconnexion}>Déconnexion</button>
