@@ -7,11 +7,13 @@ import Inscription from './Inscription';
 import Connexion from './Connexion';
 import EditProfil from './EditProfil';
 import Covoiturage from './Covoiturage';
-import Logout from './Logout'; // Importez le composant Logout
+import Logout from './Logout'; 
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 
 function App() {
+  const isLoggedIn = !!sessionStorage.getItem('token') || '';
+
   return (
     <Router>
       <div style={{ paddingBottom: '50px' }}>
@@ -24,6 +26,8 @@ function App() {
           <Route path="/editProfil" element={<EditProfil />} />
           <Route path="/covoiturage" element={<Covoiturage />} />
           <Route path="/logout" element={<Logout />} />
+          {/* Rediriger vers /login si l'utilisateur n'est pas connecté */}
+          <Route path="*" element={isLoggedIn ? <Navigate to="/profil" /> : <Navigate to="/login" />} />
         </Routes>
 
         <footer style={{ position: 'fixed', bottom: 0, width: '100%', backgroundColor: '#f8f9fa' }}>
@@ -32,14 +36,10 @@ function App() {
               <li>
                 <Link to="/profil">Profil</Link>
               </li>
-              <li>
-                <Link to="/login">Login</Link>
+              <li><Link to="/logout">Logout</Link>
               </li>
               <li>
                 <Link to="/covoiturage">Covoiturage</Link>
-              </li>
-              <li>
-                <Link to="/logout">Déconnexion</Link>
               </li>
             </ul>
           </nav>

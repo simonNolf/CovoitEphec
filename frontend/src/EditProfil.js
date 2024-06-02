@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { checkTokenExpiration } from './utils/tokenUtils';
+
 
 const EditProfil = () => {
     const [nom, setNom] = useState('');
@@ -15,6 +17,15 @@ const EditProfil = () => {
         const storedNom = localStorage.getItem('nom');
         const storedPrenom = localStorage.getItem('prenom');
         const storedAdresse = localStorage.getItem('adresse');
+
+        const handleTokenExpiration = () => {
+          toast.error('Votre session a expiré');
+          navigate('/login');
+      };
+
+      if (checkTokenExpiration(handleTokenExpiration)) {
+          return;
+      }
 
         if (storedNom && storedPrenom && storedAdresse) {
             setNom(storedNom);
