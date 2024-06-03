@@ -7,6 +7,7 @@ const EditProfil = () => {
     const [nom, setNom] = useState('');
     const [prenom, setPrenom] = useState('');
     const [adresse, setAdresse] = useState('');
+    const [numero, setNumero] = useState('');
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
     const apiUrl = process.env.REACT_APP_API_URL;
@@ -18,6 +19,7 @@ const EditProfil = () => {
         const storedNom = localStorage.getItem('nom');
         const storedPrenom = localStorage.getItem('prenom');
         const storedAdresse = localStorage.getItem('adresse');
+        const storedNumero = localStorage.getItem('numero');
 
         const handleTokenExpiration = () => {
             toast.error('Votre session a expiré');
@@ -28,18 +30,21 @@ const EditProfil = () => {
             return;
         }
 
-        if (storedNom && storedPrenom && storedAdresse) {
+        if (storedNom && storedPrenom && storedAdresse && storedNumero) {
             setNom(storedNom);
             setPrenom(storedPrenom);
             setAdresse(storedAdresse);
+            setNumero(storedNumero);
             localStorage.removeItem('nom');
             localStorage.removeItem('prenom');
             localStorage.removeItem('adresse');
+            localStorage.removeItem('numero');
         } else if (location.state) {
-            const { nom, prenom, adresse } = location.state;
+            const { nom, prenom, adresse, numero } = location.state;
             setNom(nom || '');
             setPrenom(prenom || '');
             setAdresse(adresse || '');
+            setNumero(numero || '');
         }
     }, [location.state]);
 
@@ -48,6 +53,7 @@ const EditProfil = () => {
         if (!nom.trim()) errors.nom = 'Le champ Nom ne peut pas être vide.';
         if (!prenom.trim()) errors.prenom = 'Le champ Prénom ne peut pas être vide.';
         if (!adresse.trim()) errors.adresse = 'Le champ Adresse ne peut pas être vide.';
+        if (!numero.trim()) errors.numero = 'Le champ Numéro de téléphone ne peut pas être vide.';
         return errors;
     };
 
@@ -86,6 +92,7 @@ const EditProfil = () => {
                         nom: nom.trim(),
                         prenom: prenom.trim(),
                         adresse: adresse.trim(),
+                        numero: numero.trim(),
                         isDriver: isDriver,
                         latitude: lat,
                         longitude: lon
@@ -134,6 +141,17 @@ const EditProfil = () => {
                         />
                     </label>
                     {errors.prenom && <p style={{ color: 'red' }}>{errors.prenom}</p>}
+                </div>
+                <div>
+                    <label>
+                        Numéro de téléphone :
+                        <input
+                            type="text"
+                            value={numero}
+                            onChange={(e) => setNumero(e.target.value)}
+                        />
+                    </label>
+                    {errors.numero && <p style={{ color: 'red' }}>{errors.numero}</p>}
                 </div>
                 <div>
                     <label>

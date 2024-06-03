@@ -146,10 +146,10 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/updateUser', async (req, res) => {
-  const { matricule, nom, prenom, latitude, longitude, isDriver } = req.body;
+  const { matricule, nom, prenom, latitude, longitude, isDriver, numero } = req.body;
 
   try {
-    await db.none('UPDATE user_data SET nom = $2, prenom = $3, adresse = POINT($4, $5) WHERE matricule = $1', [matricule, nom, prenom, longitude, latitude]);
+    await db.none('UPDATE user_data SET nom = $2, prenom = $3, adresse = POINT($4, $5), numero=$6 WHERE matricule = $1', [matricule, nom, prenom, longitude, latitude, numero]);
     
     const existingUserRole = await db.oneOrNone('SELECT * FROM user_role WHERE matricule = $1', [matricule]);
 

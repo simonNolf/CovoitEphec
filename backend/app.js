@@ -20,10 +20,6 @@ app.listen(PORT, () => {
 // Route d'activation du compte
 const moment = require('moment');
 
-app.get("/test", async (req,res) => {
-  res.send("coucou")
-})
-
 app.get('/activate/:matricule', async (req, res) => {
   const matricule = req.params.matricule;
 
@@ -68,8 +64,20 @@ app.get('/getUser', async (req, res) => {
     // Recherche des données de l'utilisateur dans la table "user" en fonction du matricule
     const user = await db.one('SELECT * FROM user_data WHERE matricule = $1', [matricule]);
 
-    // Envoi des données de l'utilisateur dans la réponse
-    res.json({ success: true, user });
+    // Recherche du rôle de l'utilisateur dans la table "user_role"
+    const userRole = await db.oneOrNone('SELECT id_role FROM user_role WHERE matricule = $1', [matricule]);
+
+    let additionalInfo = {};
+    if (userRole) {
+      if (userRole.id_role === 2) {
+        additionalInfo = { isDriver: true };
+      } else if (userRole.id_role === 3) {
+        additionalInfo = { isAdmin: true };
+      }
+    }
+
+    // Envoi des données de l'utilisateur dans la réponse, incluant les informations supplémentaires sur le rôle
+    res.json({ success: true, user, ...additionalInfo });
   } catch (error) {
     console.error('Error:', error);
     if (error.message === 'Invalid token') {
@@ -79,6 +87,83 @@ app.get('/getUser', async (req, res) => {
     }
   }
 });
+
+app.post('/addCar', async (req, res) => {
+  const { carName, carSeats } = req.body;
+  const receivedToken = req.headers.token;
+
+  if (!receivedToken) {
+    return res.status(401).json({ success: false, message: 'Token non valide' });
+  }
+
+  try {
+    // Vérifier le token
+    const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+    const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+
+    // Insérer les informations de la voiture dans la table 'cars'
+    const carResult = await db.one('INSERT INTO car (name, places) VALUES ($1, $2) RETURNING id', [carName, carSeats]);
+    const carId = carResult.id;
+
+    // Insérer l'association dans la table 'user_car'
+    await db.none('INSERT INTO user_car (matricule, id_car) VALUES ($1, $2)', [matricule, carId]);
+
+    res.status(201).json({ success: true, message: 'Voiture ajoutée avec succès.' });
+  } catch (error) {
+    console.error('Erreur lors de l\'ajout de la voiture :', error);
+    res.status(500).json({ success: false, error: 'Erreur lors de l\'ajout de la voiture.' });
+  }
+});
+
+app.get('/getCars', async (req, res) => {
+  const receivedToken = req.headers.token;
+
+  if (!receivedToken) {
+    return res.status(401).json({ success: false, message: 'Token non valide' });
+  }
+
+  try {
+    // Vérifier le token
+    const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+    const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+
+    // Récupérer les voitures de l'utilisateur
+    const cars = await db.any('SELECT car.id, car.name, car.places FROM car JOIN user_car ON car.id = user_car.id_car WHERE user_car.matricule = $1', [matricule]);
+
+    res.json({ success: true, cars });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des voitures :', error);
+    res.status(500).json({ success: false, error: 'Erreur lors de la récupération des voitures.' });
+  }
+});
+
+app.put('/editCar', async (req, res) => {
+  const { carId, carName, carSeats } = req.body;
+
+  try {
+    await db.none('UPDATE car SET name = $1, places = $2 WHERE id = $3', [carName, carSeats, carId]);
+    res.json({ success: true, message: 'Voiture mise à jour avec succès.' });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de la voiture :', error);
+    res.status(500).json({ success: false, error: 'Erreur lors de la mise à jour de la voiture.' });
+  }
+});
+
+// Route pour supprimer une voiture
+app.delete('/deleteCar', async (req, res) => {
+  const { carId } = req.body;
+
+  try {
+    await db.none('DELETE FROM car WHERE id = $1', [carId]);
+    await db.none('DELETE FROM user_car WHERE id_car = $1', [carId]);
+    res.json({ success: true, message: 'Voiture supprimée avec succès.' });
+  } catch (error) {
+    console.error('Erreur lors de la suppression de la voiture :', error);
+    res.status(500).json({ success: false, error: 'Erreur lors de la suppression de la voiture.' });
+  }
+});
+
+
 
 
 module.exports = app;
