@@ -163,7 +163,68 @@ app.delete('/deleteCar', async (req, res) => {
   }
 });
 
+app.post('/addCovoit', async (req, res) => {
+  const { date, time, address, isDriver, selectedCar } = req.body;
+  const receivedToken = req.headers.token;
 
+  if (!receivedToken) {
+      return res.status(401).json({ success: false, message: 'Token manquant dans les en-têtes' });
+  }
+
+  try {
+      const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+      const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+
+      // Vérifiez si l'utilisateur est conducteur ou passager
+      if (isDriver) {
+          // Vérifiez si le conducteur a déjà une proposition ou une demande pour la même date
+          const existingPropositionQuery = 'SELECT * FROM proposition WHERE date = $1 AND matricule_conducteur = $2';
+          const existingPropositionValues = [date, matricule];
+          const existingPropositionResult = await db.query(existingPropositionQuery, existingPropositionValues);
+          console.log(existingPropositionResult.length)
+
+          if (existingPropositionResult.length > 1) {
+              return res.status(400).json({ success: false, message: 'Vous avez déjà une proposition pour cette date' });
+          }
+
+          const existingDemandQuery = 'SELECT * FROM demande WHERE date = $1 AND demandeur = $2';
+          const existingDemandValues = [date, matricule];
+          const existingDemandResult = await db.query(existingDemandQuery, existingDemandValues);
+
+          if (existingDemandResult.length > 1 ) {
+              return res.status(400).json({ success: false, message: 'Vous avez déjà une demande pour cette date' });
+          }
+      } else {
+          // Vérifiez si le passager a déjà une demande pour la même date
+          const existingDemandQuery = 'SELECT * FROM demande WHERE date = $1 AND demandeur = $2';
+          const existingDemandValues = [date, matricule];
+          const existingDemandResult = await db.query(existingDemandQuery, existingDemandValues);
+
+          if (existingDemandResult.rows.length > 0) {
+              return res.status(400).json({ success: false, message: 'Vous avez déjà une demande pour cette date' });
+          }
+      }
+
+      // Créez un objet à insérer dans la base de données en fonction de isDriver
+      let insertQuery, insertValues;
+      if (isDriver) {
+        adresse = `Point(${address.lon}, ${address.lat})`;
+        insertQuery = `INSERT INTO proposition (matricule_conducteur, id_car, status, date, heure, adresse) VALUES ('${matricule}', '${selectedCar}', 'pending', '${date}', '${time}', POINT(${address.lon}, ${address.lat}))`;
+        insertValues = [matricule, selectedCar, 'pending', date, time, adresse];
+
+      } else {
+          insertQuery = 'INSERT INTO demande (date, time, address, matricule_passager, status) VALUES ($1, $2, $3, $4, $5)';
+          insertValues = [date, time, address, matricule, 'pending'];
+      }
+
+      // Essayez d'insérer l'objet dans la base de données
+      await db.query(insertQuery, insertValues);
+      return res.status(200).json({ success: true, message: 'Covoiturage ajouté avec succès' });
+  } catch (error) {
+      console.error('Erreur lors de la gestion du covoiturage:', error);
+      return res.status(500).json({ success: false, message: 'Erreur lors de la gestion du covoiturage' });
+  }
+});
 
 
 module.exports = app;

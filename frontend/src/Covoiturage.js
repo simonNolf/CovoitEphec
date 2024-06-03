@@ -13,7 +13,7 @@ const CovoituragePage = () => {
     const [address, setAddress] = useState('');
     const [coordinates, setCoordinates] = useState(null);
     const [mapVisible, setMapVisible] = useState(false);
-    const [mapCenter, setMapCenter] = useState([51.505, -0.09]);
+    const [mapCenter, setMapCenter] = useState([]);
     const [isDriver, setIsDriver] = useState(false);
     const [userCars, setUserCars] = useState([]);
     const [selectedCar, setSelectedCar] = useState('');
@@ -21,6 +21,7 @@ const CovoituragePage = () => {
     const navigate = useNavigate();
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
+    const openRouteServiceApiKey = process.env.REACT_APP_OPENROUTESERVICE_API_KEY;
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -32,7 +33,6 @@ const CovoituragePage = () => {
             return;
         }
 
-        // Appel à getUser pour récupérer les informations sur l'utilisateur
         const fetchUserData = async () => {
             try {
                 const response = await fetch(`${apiUrl}/getUser`, {
@@ -44,13 +44,10 @@ const CovoituragePage = () => {
                 });
                 const data = await response.json();
                 if (data.success) {
-                    // Vérifie si l'utilisateur est conducteur
                     setIsDriver(data.isDriver);
-                    // Si l'utilisateur est conducteur, charge les voitures qu'il possède
                     if (data.isDriver) {
                         fetchUserCars();
                     }
-                    // Si l'utilisateur a une adresse, la décode pour remplir le champ d'adresse
                     if (data.user.adresse) {
                         const latitude = parseFloat(data.user.adresse.y);
                         const longitude = parseFloat(data.user.adresse.x);
@@ -71,7 +68,6 @@ const CovoituragePage = () => {
         fetchUserData();
     }, [token, navigate, apiUrl]);
 
-    // Fonction pour récupérer les voitures de l'utilisateur
     const fetchUserCars = async () => {
         try {
             const response = await fetch(`${apiUrl}/getCars`, {
@@ -92,7 +88,6 @@ const CovoituragePage = () => {
         }
     };
 
-    // Fonction pour déterminer l'adresse à partir des coordonnées géographiques
     const decodeAdresse = async (latitude, longitude) => {
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
@@ -163,6 +158,11 @@ const CovoituragePage = () => {
         setDisplayCarDropdown(!displayCarDropdown);
     };
 
+    const handleCarSelectionChange = (e) => {
+        const selectedCarId = e.target.value; // Récupérer l'ID de la voiture sélectionnée
+        setSelectedCar(selectedCarId);
+    };
+
     return (
         <div>
             <h1>Page de covoiturage</h1>
@@ -176,7 +176,7 @@ const CovoituragePage = () => {
                     <input type="time" id="time" name="time" value={time} onChange={(e) => setTime(e.target.value)} required />
                 </div>
                 <div>
-                    <label htmlFor="address">Adresse:</label>
+                    <label htmlFor="address">Address:</label>
                     <input 
                         type="text" 
                         id="address" 
@@ -203,12 +203,12 @@ const CovoituragePage = () => {
                                     id="car" 
                                     name="car" 
                                     value={selectedCar} 
-                                    onChange={(e) => setSelectedCar(e.target.value)} 
+                                    onChange={handleCarSelectionChange} // Utilisation de la nouvelle fonction de gestionnaire d'événement pour mettre à jour l'ID de la voiture sélectionnée
                                     required
                                 >
                                     <option value="">Sélectionnez une voiture</option>
                                     {userCars.map(car => (
-                                        <option key={car.id} value={car.name}>{car.name} - {car.places} places</option>
+                                        <option key={car.id} value={car.id}>{car.name} - {car.places} places</option>
                                     ))}
                                 </select>
                             </div>
@@ -225,7 +225,7 @@ const CovoituragePage = () => {
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         />
                         {coordinates && (
-                            <Marker position={[coordinates.lat, coordinates.lon]} eventHandlers={{ click: () => navigate('/covoiturage') }} icon={customIcon}>
+                            <Marker position={[coordinates.lat, coordinates.lon]} icon={customIcon}>
                                 <Popup>
                                     Adresse: {address}
                                 </Popup>
