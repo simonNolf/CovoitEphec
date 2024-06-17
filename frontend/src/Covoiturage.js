@@ -12,9 +12,9 @@ const CovoituragePage = () => {
     const [time, setTime] = useState('');
     const [address, setAddress] = useState('');
     const [coordinates, setCoordinates] = useState(null);
-    const [mapVisible, setMapVisible] = useState(false);
+    const [mapVisible, setMapVisible] = useState(null);
     const [mapCenter, setMapCenter] = useState([]);
-    const [isDriver, setIsDriver] = useState(false);
+    const [isDriver, setIsDriver] = useState(null);
     const [userCars, setUserCars] = useState([]);
     const [selectedCar, setSelectedCar] = useState('');
     const [displayCarDropdown, setDisplayCarDropdown] = useState(false);
@@ -44,7 +44,6 @@ const CovoituragePage = () => {
                 });
                 const data = await response.json();
                 if (data.success) {
-                    setIsDriver(data.isDriver);
                     if (data.isDriver) {
                         fetchUserCars();
                     }
@@ -108,6 +107,63 @@ const CovoituragePage = () => {
         }
     };
 
+    const resetForm = () => {
+        setDate('');
+        setTime('');
+        setSelectedCar('');
+        setDisplayCarDropdown(false);
+    };
+
+    const addProposition = async (covoiturageData) => {
+        try {
+            const response = await fetch(`${apiUrl}/addProposition`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+                body: JSON.stringify(covoiturageData),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success('Proposition de covoiturage enregistrée avec succès');
+                resetForm();
+            } else {
+                toast.error(`Erreur lors de l'enregistrement: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'enregistrement du covoiturage:', error);
+            toast.error('Erreur lors de l\'enregistrement du covoiturage');
+        }
+    };
+
+    const addDemande = async (covoiturageData) => {
+        try {
+            const response = await fetch(`${apiUrl}/addDemande`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+                body: JSON.stringify(covoiturageData),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success('Demande de covoiturage enregistrée avec succès');
+                resetForm();
+            } else {
+                toast.error(`Erreur lors de l'enregistrement: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'enregistrement du covoiturage:', error);
+            toast.error('Erreur lors de l\'enregistrement du covoiturage');
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!coordinates) {
@@ -123,27 +179,10 @@ const CovoituragePage = () => {
             selectedCar: isDriver ? selectedCar : null,
         };
 
-        try {
-            const response = await fetch(`${apiUrl}/addCovoit`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'token': token,
-                },
-                body: JSON.stringify(covoiturageData),
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                toast.success('Proposition de covoiturage enregistrée avec succès');
-                navigate('/covoiturage');
-            } else {
-                toast.error(`Erreur lors de l'enregistrement: ${data.message}`);
-            }
-        } catch (error) {
-            console.error('Erreur lors de l\'enregistrement du covoiturage:', error);
-            toast.error('Erreur lors de l\'enregistrement du covoiturage');
+        if (isDriver) {
+            await addProposition(covoiturageData);
+        } else {
+            await addDemande(covoiturageData);
         }
     };
 
@@ -155,11 +194,12 @@ const CovoituragePage = () => {
     });
 
     const handleDriverCheckboxChange = () => {
+        setIsDriver(!isDriver);
         setDisplayCarDropdown(!displayCarDropdown);
     };
 
     const handleCarSelectionChange = (e) => {
-        const selectedCarId = e.target.value; // Récupérer l'ID de la voiture sélectionnée
+        const selectedCarId = e.target.value;
         setSelectedCar(selectedCarId);
     };
 
@@ -176,7 +216,7 @@ const CovoituragePage = () => {
                     <input type="time" id="time" name="time" value={time} onChange={(e) => setTime(e.target.value)} required />
                 </div>
                 <div>
-                    <label htmlFor="address">Address:</label>
+                    <label htmlFor="address">Adresse:</label>
                     <input 
                         type="text" 
                         id="address" 
@@ -186,35 +226,33 @@ const CovoituragePage = () => {
                         required 
                     />
                 </div>
-                {isDriver && (
-                    <div>
-                        <label htmlFor="isDriver">Conducteur:</label>
-                        <input 
-                            type="checkbox" 
-                            id="isDriver" 
-                            name="isDriver" 
-                            checked={displayCarDropdown} 
-                            onChange={handleDriverCheckboxChange} 
-                        />
-                        {displayCarDropdown && (
-                            <div>
-                                <label htmlFor="car">Sélectionnez votre voiture:</label>
-                                <select 
-                                    id="car" 
-                                    name="car" 
-                                    value={selectedCar} 
-                                    onChange={handleCarSelectionChange} // Utilisation de la nouvelle fonction de gestionnaire d'événement pour mettre à jour l'ID de la voiture sélectionnée
-                                    required
-                                >
-                                    <option value="">Sélectionnez une voiture</option>
-                                    {userCars.map(car => (
-                                        <option key={car.id} value={car.id}>{car.name} - {car.places} places</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-                    </div>
-                )}
+                <div>
+                    <label htmlFor="isDriver">Conducteur:</label>
+                    <input 
+                        type="checkbox" 
+                        id="isDriver" 
+                        name="isDriver"
+                        checked={isDriver} 
+                        onChange={handleDriverCheckboxChange} 
+                    />
+                    {displayCarDropdown && (
+                        <div>
+                            <label htmlFor="car">Sélectionnez votre voiture:</label>
+                            <select 
+                                id="car" 
+                                name="car" 
+                                value={selectedCar} 
+                                onChange={handleCarSelectionChange}
+                                required
+                            >
+                                <option value="">Sélectionnez une voiture</option>
+                                {userCars.map(car => (
+                                    <option key={car.id} value={car.id}>{car.name} - {car.places} places</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                </div>
                 <button type="submit">Soumettre</button>
             </form>
             {mapVisible && (
@@ -239,4 +277,3 @@ const CovoituragePage = () => {
 };
 
 export default CovoituragePage;
-
