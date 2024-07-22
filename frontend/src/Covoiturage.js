@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -6,22 +6,25 @@ import 'leaflet/dist/leaflet.css';
 import markerIcon from './marker.png';
 import L from 'leaflet';
 import { checkTokenExpiration } from './utils/tokenUtils';
+import debounce from 'lodash.debounce';
 
 const CovoituragePage = () => {
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
     const [address, setAddress] = useState('');
     const [coordinates, setCoordinates] = useState(null);
-    const [mapVisible, setMapVisible] = useState(null);
-    const [mapCenter, setMapCenter] = useState([]);
-    const [isDriver, setIsDriver] = useState(null);
+    const [mapVisible, setMapVisible] = useState(false);
+    const [mapCenter, setMapCenter] = useState([50.6658654, 4.6126958]); 
+    const [isDriver, setIsDriver] = useState(false);
     const [userCars, setUserCars] = useState([]);
     const [selectedCar, setSelectedCar] = useState('');
     const [displayCarDropdown, setDisplayCarDropdown] = useState(false);
+    const [propositions, setPropositions] = useState([]);
+    const [demandes, setDemandes] = useState([]);
+    const [selectedCovoiturage, setSelectedCovoiturage] = useState(null);
     const navigate = useNavigate();
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
-    const openRouteServiceApiKey = process.env.REACT_APP_OPENROUTESERVICE_API_KEY;
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -56,6 +59,7 @@ const CovoituragePage = () => {
                             console.error('Coordonnées GPS invalides');
                         }
                     }
+                    fetchCovoiturages();
                 } else {
                     console.error('Erreur:', data.message);
                 }
@@ -87,7 +91,46 @@ const CovoituragePage = () => {
         }
     };
 
-    const decodeAdresse = async (latitude, longitude) => {
+    const fetchCovoiturages = async () => {
+        try {
+            const [propositionsResponse, demandesResponse] = await Promise.all([
+                fetch(`${apiUrl}/getPropositions`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'token': token,
+                    },
+                }),
+                fetch(`${apiUrl}/getDemandes`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'token': token,
+                    },
+                }),
+            ]);
+    
+            const propositionsData = await propositionsResponse.json();
+            const demandesData = await demandesResponse.json();
+    
+            if (propositionsData.success) {
+                setPropositions(propositionsData.propositions);
+            } else {
+                console.error('Erreur:', propositionsData.message);
+            }
+    
+            if (demandesData.success) {
+                setDemandes(demandesData.demandes);
+            } else {
+                console.error('Erreur:', demandesData.message);
+            }
+        } catch (error) {
+            console.error('Erreur lors de la récupération des covoiturages:', error);
+        }
+    };
+    
+
+    const decodeAdresse = useCallback(debounce(async (latitude, longitude) => {
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
             const data = await response.json();
@@ -105,7 +148,7 @@ const CovoituragePage = () => {
             console.error('Erreur lors du décodage de l\'adresse:', error);
             toast.error('Erreur lors du décodage de l\'adresse');
         }
-    };
+    }, 300), []);
 
     const resetForm = () => {
         setDate('');
@@ -130,6 +173,8 @@ const CovoituragePage = () => {
             if (data.success) {
                 toast.success('Proposition de covoiturage enregistrée avec succès');
                 resetForm();
+                fetchCovoiturages(); // Refresh covoiturages list
+                navigate('/profil');
             } else {
                 toast.error(`Erreur lors de l'enregistrement: ${data.message}`);
             }
@@ -155,6 +200,8 @@ const CovoituragePage = () => {
             if (data.success) {
                 toast.success('Demande de covoiturage enregistrée avec succès');
                 resetForm();
+                fetchCovoiturages(); // Refresh covoiturages list
+                navigate('/profil');
             } else {
                 toast.error(`Erreur lors de l'enregistrement: ${data.message}`);
             }
@@ -193,6 +240,56 @@ const CovoituragePage = () => {
         popupAnchor: [0, -30]
     });
 
+    const handleAddressChange = async (e) => {
+        const newAddress = e.target.value;
+        setAddress(newAddress);
+    
+        // Si l'adresse est vide, ne pas effectuer la requête
+        if (!newAddress) {
+            setCoordinates(null);
+            setMapVisible(false);
+            return;
+        }
+    
+        try {
+            // Requête à l'API Nominatim d'OpenStreetMap pour géocoder l'adresse
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(newAddress)}&format=json&addressdetails=1`);
+    
+            if (!response.ok) {
+                throw new Error('Erreur réseau lors du géocodage');
+            }
+    
+            const data = await response.json();
+    
+            // Vérifier si des résultats sont renvoyés
+            if (data && data.length > 0) {
+                const { lat, lon } = data[0];
+                setCoordinates({ lat, lon });
+                setMapCenter([lat, lon]);
+                setMapVisible(true);
+    
+                // Décoder l'adresse pour obtenir une version formatée
+                const reverseResponse = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+                const reverseData = await reverseResponse.json();
+                if (reverseData.address) {
+                    const { road, house_number, postcode, town } = reverseData.address;
+                    const formattedAddress = `${road || ''}, ${house_number || ''}, ${postcode || ''} ${town || ''}`;
+                    setAddress(formattedAddress);
+                } else {
+                    toast.error('Adresse non disponible');
+                }
+            } else {
+                toast.error('Adresse non trouvée');
+                setCoordinates(null);
+                setMapVisible(false);
+            }
+        } catch (error) {
+            console.error('Erreur lors du géocodage:', error);
+            toast.error('Erreur lors du géocodage');
+        }
+    };
+    
+
     const handleDriverCheckboxChange = () => {
         setIsDriver(!isDriver);
         setDisplayCarDropdown(!displayCarDropdown);
@@ -202,6 +299,70 @@ const CovoituragePage = () => {
         const selectedCarId = e.target.value;
         setSelectedCar(selectedCarId);
     };
+
+    const handleCovoiturageClick = async (covoiturage) => {
+        if (covoiturage.adresse) {
+            // Extrait latitude et longitude depuis l'objet adresse
+            const latitude = covoiturage.adresse.y;
+            const longitude = covoiturage.adresse.x;
+            
+            // Décoder l'adresse pour obtenir une version formatée
+            const decodedAddress = await decodeAdresse(latitude, longitude);
+            
+            // Met à jour le covoiturage sélectionné avec les coordonnées et l'adresse décodée
+            setSelectedCovoiturage({ ...covoiturage, decodedAddress, coordinates: [latitude, longitude] });
+        } else {
+            setSelectedCovoiturage({ ...covoiturage, decodedAddress: 'Coordonnées non disponibles', coordinates: null });
+        }
+    };
+    
+
+    const renderCovoiturageDetails = () => {
+        if (!selectedCovoiturage) return null;
+    
+        // Fonction pour gérer l'acceptation
+        const handleAccept = () => {
+            if (selectedCovoiturage.id) {
+                alert(`ID du covoiturage : ${selectedCovoiturage.id}`);
+            } else {
+                alert('ID non disponible');
+            }
+        };
+    
+        return (
+            <div>
+                <h2>Détails du covoiturage</h2>
+                <p>Date: {selectedCovoiturage.date.split('T')[0]}</p>
+                <p>Heure: {selectedCovoiturage.heure}</p>
+                <p>Adresse: {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}</p>
+                {selectedCovoiturage.isDriver && <p>Voiture: {selectedCovoiturage.carName}</p>}
+    
+                {selectedCovoiturage.coordinates && (
+                    <div style={{ height: '400px', width: '100%' }}>
+                        <MapContainer center={selectedCovoiturage.coordinates} zoom={13} style={{ height: '100%', width: '100%' }}>
+                            <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            />
+                            <Marker position={selectedCovoiturage.coordinates} icon={customIcon}>
+                                <Popup>
+                                    {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}
+                                </Popup>
+                            </Marker>
+                        </MapContainer>
+                    </div>
+                )}
+    
+                {/* Bouton pour accepter */}
+                <button onClick={handleAccept} style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                    Accepter
+                </button>
+            </div>
+        );
+    };
+    
+    
+    
 
     return (
         <div>
@@ -222,7 +383,7 @@ const CovoituragePage = () => {
                         id="address" 
                         name="address" 
                         value={address} 
-                        onChange={(e) => setAddress(e.target.value)} 
+                        onChange={handleAddressChange} 
                         required 
                     />
                 </div>
@@ -253,25 +414,40 @@ const CovoituragePage = () => {
                         </div>
                     )}
                 </div>
-                <button type="submit">Soumettre</button>
+                <button type="submit">Envoyer</button>
             </form>
-            {mapVisible && (
-                <div style={{ height: '400px', width: '100%' }}>
-                    <MapContainer center={mapCenter} zoom={18} style={{ height: '100%', width: '100%' }}>
-                        <TileLayer
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        />
-                        {coordinates && (
-                            <Marker position={[coordinates.lat, coordinates.lon]} icon={customIcon}>
-                                <Popup>
-                                    Adresse: {address}
-                                </Popup>
-                            </Marker>
-                        )}
-                    </MapContainer>
-                </div>
-            )}
+
+            <h2>Demandes de covoiturage</h2>
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <tbody>
+                    {demandes.map((demande) => (
+                        <tr key={demande.id} style={{ borderBottom: '1px solid #ccc' }}>
+                            <td>date : {demande.date.split('T')[0]}</td>
+                            <td>heure : {demande.heure}</td>
+                            <td>
+                                <button onClick={() => handleCovoiturageClick(demande)}>Voir les détails</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+            <h2>Propositions de covoiturage</h2>
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <tbody>
+                    {propositions.map((proposition) => (
+                        <tr key={proposition.id} style={{ borderBottom: '1px solid #ccc' }}>
+                            <td>date : {proposition.date.split('T')[0]}</td>
+                            <td>heure : {proposition.heure}</td>
+                            <td>
+                                <button onClick={() => handleCovoiturageClick(proposition)}>Voir les détails</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+            {renderCovoiturageDetails()}
         </div>
     );
 };

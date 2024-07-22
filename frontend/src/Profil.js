@@ -301,6 +301,7 @@ const handleCarEdit = async (event) => {
 };
 
     const deleteProposition = async(propositionId) => {
+        console.log(propositionId)
         try {
             const response = await fetch(`${apiUrl}/deleteProposition`, {
                 method: 'DELETE',
@@ -313,7 +314,7 @@ const handleCarEdit = async (event) => {
             const data = await response.json();
             if (data.success) {
                 toast.success('Proposition supprimée avec succès.');
-                fetchUserCars();
+                fetchPropositions();
             } else {
                 toast.error('Erreur lors de la suppression de la proposition.');
             }
@@ -456,7 +457,7 @@ return (
                                     <ul>
                                         {propositions.map(proposition => (
                                             <li key={proposition.id}>
-                                                Date: {proposition.date}, Heure: {proposition.heure}, Adresse: {proposition.adresse}, Voiture: {proposition.car_name}
+                                                Date: {proposition.date.split('T')[0]}, Heure: {proposition.heure}, Adresse: {proposition.adresse}, Voiture: {proposition.car_name}
                                                 {(new Date(proposition.date) > new Date(new Date().setDate(new Date().getDate() + 2))) && (
                                                     <button onClick={() => deleteProposition(proposition.id)}>🗑️</button>
                                                 )}
@@ -472,7 +473,7 @@ return (
                                     <ul>
                                         {demandes.map(demande => (
                                             <li key={demande.id}>
-                                                Date: {demande.date.split('T')[0]}, Heure: {demande.date.split('T')[1].substring(0, 5)}, Adresse: {demande.adresse}
+                                                Date: {demande.date.split('T')[0]}, Heure: {demande.heure}, Adresse: {demande.adresse}
                                                 {(new Date(demande.date) > new Date(new Date().setDate(new Date().getDate() + 2))) && (
                                                     <button onClick={() => deleteDemande(demande.id)}>🗑️</button>
                                                 )}

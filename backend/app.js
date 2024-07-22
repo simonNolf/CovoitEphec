@@ -162,6 +162,17 @@ app.delete('/deleteCar', async (req, res) => {
     res.status(500).json({ success: false, error: 'Erreur lors de la suppression de la voiture.' });
   }
 });
+app.delete('/deleteProposition', async (req,res) => {
+  const {propositionId } = req.body;
+
+  try{
+    await db.none('DELETE FROM PROPOSITION WHERE id = $1', [propositionId]);
+    res.json({success: true, message:'proposition supprimée avec succès.'});
+  }catch (error) {
+    console.error('Erreur lors de la suppression de la proposition :', error);
+    res.status(500).json({ success: false, error: 'Erreur lors de la suppression de la proposition.' });
+  }
+});
 
 app.post('/addDemande', async (req, res) => {
   const { date, time, address } = req.body;
@@ -273,6 +284,56 @@ app.get('/demandes', async (req, res) => {
       console.error(err.message);
       res.status(500).send('Erreur Serveur');
   }
+});
+
+app.get('/getDemandes', async (req, res) => {
+  const receivedToken = req.headers.token;
+
+  if (!receivedToken) {
+      return res.status(401).json({ success: false, message: 'Token manquant dans les en-têtes' });
+  }
+
+  try {
+      const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+      const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]); 
+
+      const demandes = await db.query(`SELECT * 
+          FROM demande 
+          WHERE date >= NOW() 
+          ORDER BY date ASC`);
+      res.json({success: true, demandes});
+  }
+  catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erreur Serveur');
+}
+});
+
+app.get('/getPropositions', async (req, res) => {
+  const receivedToken = req.headers.token;
+
+  if (!receivedToken) {
+      return res.status(401).json({ success: false, message: 'Token manquant dans les en-têtes' });
+  }
+
+  try {
+      const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+      const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]); 
+
+      const propositions = await db.query(`
+        SELECT p.*, c.name AS car_name 
+        FROM proposition p 
+        JOIN user_car uc ON p.id_car = uc.id_car 
+        JOIN car c ON uc.id_car = c.id 
+        WHERE uc.matricule = $1 AND p.date >= NOW() 
+        ORDER BY p.date ASC
+    `, [matricule]);
+    res.json({success: true, propositions});
+  }
+  catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erreur Serveur');
+}
 });
 
 
