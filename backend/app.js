@@ -129,7 +129,7 @@ app.get('/getCars', async (req, res) => {
 
     // Récupérer les voitures de l'utilisateur
     const cars = await db.any('SELECT car.id, car.name, car.places FROM car JOIN user_car ON car.id = user_car.id_car WHERE user_car.matricule = $1', [matricule]);
-
+console.log(cars)
     res.json({ success: true, cars });
   } catch (error) {
     console.error('Erreur lors de la récupération des voitures :', error);
@@ -208,8 +208,9 @@ app.post('/addDemande', async (req, res) => {
 });
 
 app.post('/addProposition', async (req, res) => {
-  const { date, time, address, selectedCar } = req.body;
+  const { date, time, address, selectedCar, places } = req.body;
   const receivedToken = req.headers.token;
+  console.log (req.body)
 
   if (!receivedToken) {
       return res.status(401).json({ success: false, message: 'Token manquant dans les en-têtes' });
@@ -229,8 +230,8 @@ app.post('/addProposition', async (req, res) => {
       }
 
       // Insérer la proposition dans la base de données
-      const insertQuery = 'INSERT INTO proposition (matricule_conducteur, id_car, status, date, heure, adresse) VALUES ($1, $2, $3, $4, $5, POINT($6, $7))';
-      const insertValues = [matricule, selectedCar, 'pending', date, time, address.lon, address.lat];
+      const insertQuery = 'INSERT INTO proposition (matricule_conducteur, id_car, status, date, heure, adresse, places) VALUES ($1, $2, $3, $4, $5, POINT($6, $7), $8)';
+      const insertValues = [matricule, selectedCar, 'pending', date, time, address.lon, address.lat, places];
       await db.query(insertQuery, insertValues);
 
       return res.status(200).json({ success: true, message: 'Proposition de covoiturage ajoutée avec succès' });
@@ -253,7 +254,7 @@ app.get('/propositions', async (req, res) => {
       const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
 
       // Query pour récupérer les propositions de covoiturage de l'utilisateur actuel avec le nom de la voiture
-      const propositions = await db.query('SELECT p.*, c.name AS car_name FROM proposition p JOIN user_car uc ON p.id_car = uc.id_car JOIN car c ON uc.id_car = c.id WHERE uc.matricule = $1 order by date', [matricule]);
+      const propositions = await db.query('SELECT p.*, c.name AS car_name, c.places FROM proposition p JOIN user_car uc ON p.id_car = uc.id_car JOIN car c ON uc.id_car = c.id WHERE uc.matricule = $1ORDER BY p.date', [matricule]);
 
       // Renvoyer les propositions de covoiturage avec le nom de la voiture
       res.json({ success: true, propositions });
@@ -321,7 +322,7 @@ app.get('/getPropositions', async (req, res) => {
       const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]); 
 
       const propositions = await db.query(`
-        SELECT p.*, c.name AS car_name 
+        SELECT p.*, c.name AS car_name , c.places
         FROM proposition p 
         JOIN user_car uc ON p.id_car = uc.id_car 
         JOIN car c ON uc.id_car = c.id 

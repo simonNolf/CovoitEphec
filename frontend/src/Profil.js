@@ -193,27 +193,26 @@ const Profil = () => {
 
     const deleteDemande = async (demandeId) => {
         try {
-            const response = await fetch(`${apiUrl}/delete
-Demande`, {
-method: 'DELETE',
-headers: {
-'Content-Type': 'application/json',
-'token': token,
-},
-body: JSON.stringify({ demandeId }),
-});
-const data = await response.json();
-if (data.success) {
-toast.success('Demande supprimée avec succès.');
-fetchDemandes();
-} else {
-toast.error('Erreur lors de la suppression de la demande.');
-}
-} catch (error) {
-console.error('Erreur lors de la suppression de la demande:', error);
-toast.error('Erreur lors de la suppression de la demande.');
-}
-};
+            const response = await fetch(`${apiUrl}/deleteDemande`, {
+                method: 'DELETE',
+                headers: {
+                'Content-Type': 'application/json',
+                'token': token,
+            },
+            body: JSON.stringify({ demandeId }),
+        });
+         const data = await response.json();
+        if (data.success) {
+            toast.success('Demande supprimée avec succès.');
+            fetchDemandes();
+        } else {
+            toast.error('Erreur lors de la suppression de la demande.');
+        }
+        } catch (error) {
+            console.error('Erreur lors de la suppression de la demande:', error);
+            toast.error('Erreur lors de la suppression de la demande.');
+        }
+    };
 const deconnexion = () => {
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('matricule');
@@ -457,7 +456,7 @@ return (
                                     <ul>
                                         {propositions.map(proposition => (
                                             <li key={proposition.id}>
-                                                Date: {proposition.date.split('T')[0]}, Heure: {proposition.heure}, Adresse: {proposition.adresse}, Voiture: {proposition.car_name}
+                                                Date: {proposition.date.split('T')[0]}, Heure: {proposition.heure}, <br></br>Adresse: {proposition.adresse}, <br></br>Voiture: {proposition.car_name},  places : {proposition.places}
                                                 {(new Date(proposition.date) > new Date(new Date().setDate(new Date().getDate() + 2))) && (
                                                     <button onClick={() => deleteProposition(proposition.id)}>🗑️</button>
                                                 )}
@@ -473,7 +472,7 @@ return (
                                     <ul>
                                         {demandes.map(demande => (
                                             <li key={demande.id}>
-                                                Date: {demande.date.split('T')[0]}, Heure: {demande.heure}, Adresse: {demande.adresse}
+                                                Date: {demande.date.split('T')[0]}, Heure: {demande.heure}, <br></br>Adresse: {demande.adresse}
                                                 {(new Date(demande.date) > new Date(new Date().setDate(new Date().getDate() + 2))) && (
                                                     <button onClick={() => deleteDemande(demande.id)}>🗑️</button>
                                                 )}

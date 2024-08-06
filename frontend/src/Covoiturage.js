@@ -25,6 +25,7 @@ const CovoituragePage = () => {
     const navigate = useNavigate();
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
+    console.log(propositions)
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -217,6 +218,11 @@ const CovoituragePage = () => {
             toast.error('Adresse non valide');
             return;
         }
+        const selectedCarData = userCars.find(car => car.id === parseInt(selectedCar));
+    
+    // Obtenir le nombre de places de la voiture sélectionnée, ou null si la voiture n'est pas trouvée
+    const carPlaces = selectedCarData ? selectedCarData.places : null;
+        console.log(carPlaces)
 
         const covoiturageData = {
             date,
@@ -224,6 +230,8 @@ const CovoituragePage = () => {
             address: coordinates,
             isDriver,
             selectedCar: isDriver ? selectedCar : null,
+            places: isDriver ? carPlaces : null,
+
         };
 
         if (isDriver) {
@@ -300,30 +308,39 @@ const CovoituragePage = () => {
         setSelectedCar(selectedCarId);
     };
 
-    const handleCovoiturageClick = async (covoiturage) => {
+    const handleCovoiturageClick = async (covoiturage, type) => {
         if (covoiturage.adresse) {
-            // Extrait latitude et longitude depuis l'objet adresse
             const latitude = covoiturage.adresse.y;
             const longitude = covoiturage.adresse.x;
-            
-            // Décoder l'adresse pour obtenir une version formatée
             const decodedAddress = await decodeAdresse(latitude, longitude);
-            
-            // Met à jour le covoiturage sélectionné avec les coordonnées et l'adresse décodée
-            setSelectedCovoiturage({ ...covoiturage, decodedAddress, coordinates: [latitude, longitude] });
+    
+            setSelectedCovoiturage({ 
+                ...covoiturage, 
+                decodedAddress, 
+                coordinates: [latitude, longitude], 
+                type, 
+                placesRestantes: covoiturage.places  // Ajoutez cette ligne pour gérer les places restantes
+            });
         } else {
-            setSelectedCovoiturage({ ...covoiturage, decodedAddress: 'Coordonnées non disponibles', coordinates: null });
+            setSelectedCovoiturage({ 
+                ...covoiturage, 
+                decodedAddress: 'Coordonnées non disponibles', 
+                coordinates: null, 
+                type, 
+                placesRestantes: covoiturage.places  
+            })
         }
     };
+    
+    
     
 
     const renderCovoiturageDetails = () => {
         if (!selectedCovoiturage) return null;
     
-        // Fonction pour gérer l'acceptation
         const handleAccept = () => {
             if (selectedCovoiturage.id) {
-                alert(`ID du covoiturage : ${selectedCovoiturage.id}`);
+                alert(`Type: ${selectedCovoiturage.type}\nID du covoiturage : ${selectedCovoiturage.id}\nDate : ${selectedCovoiturage.date.split('T')[0]}\nHeure : ${selectedCovoiturage.heure}\nAdresse : ${selectedCovoiturage.decodedAddress || 'Adresse non disponible'}`);
             } else {
                 alert('ID non disponible');
             }
@@ -331,35 +348,40 @@ const CovoituragePage = () => {
     
         return (
             <div>
-                <h2>Détails du covoiturage</h2>
-                <p>Date: {selectedCovoiturage.date.split('T')[0]}</p>
-                <p>Heure: {selectedCovoiturage.heure}</p>
-                <p>Adresse: {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}</p>
-                {selectedCovoiturage.isDriver && <p>Voiture: {selectedCovoiturage.carName}</p>}
-    
-                {selectedCovoiturage.coordinates && (
-                    <div style={{ height: '400px', width: '100%' }}>
-                        <MapContainer center={selectedCovoiturage.coordinates} zoom={13} style={{ height: '100%', width: '100%' }}>
-                            <TileLayer
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            />
-                            <Marker position={selectedCovoiturage.coordinates} icon={customIcon}>
-                                <Popup>
-                                    {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}
-                                </Popup>
-                            </Marker>
-                        </MapContainer>
-                    </div>
-                )}
-    
-                {/* Bouton pour accepter */}
-                <button onClick={handleAccept} style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-                    Accepter
-                </button>
-            </div>
+    <h2>Détails du covoiturage</h2>
+    <p>Date: {selectedCovoiturage.date.split('T')[0]}</p>
+    <p>Heure: {selectedCovoiturage.heure}</p>
+    <p>Adresse: {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}</p>
+
+    {/* Affiche le nombre de places restantes seulement s'il s'agit d'une proposition */}
+    {selectedCovoiturage.type === 'Proposition' && (
+        <p>Places restantes: {selectedCovoiturage.placesRestantes}</p>
+    )}
+
+    {selectedCovoiturage.coordinates && (
+        <div style={{ height: '400px', width: '100%' }}>
+            <MapContainer center={selectedCovoiturage.coordinates} zoom={13} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                <Marker position={selectedCovoiturage.coordinates} icon={customIcon}>
+                    <Popup>
+                        {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}
+                    </Popup>
+                </Marker>
+            </MapContainer>
+        </div>
+    )}
+
+    <button onClick={handleAccept} style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+        Accepter
+    </button>
+</div>
+
         );
     };
+    
     
     
     
@@ -425,8 +447,8 @@ const CovoituragePage = () => {
                             <td>date : {demande.date.split('T')[0]}</td>
                             <td>heure : {demande.heure}</td>
                             <td>
-                                <button onClick={() => handleCovoiturageClick(demande)}>Voir les détails</button>
-                            </td>
+    <button onClick={() => handleCovoiturageClick(demande, 'Demande')}>Voir les détails</button>
+</td>
                         </tr>
                     ))}
                 </tbody>
@@ -440,8 +462,8 @@ const CovoituragePage = () => {
                             <td>date : {proposition.date.split('T')[0]}</td>
                             <td>heure : {proposition.heure}</td>
                             <td>
-                                <button onClick={() => handleCovoiturageClick(proposition)}>Voir les détails</button>
-                            </td>
+    <button onClick={() => handleCovoiturageClick(proposition, 'Proposition')}>Voir les détails</button>
+</td>
                         </tr>
                     ))}
                 </tbody>
