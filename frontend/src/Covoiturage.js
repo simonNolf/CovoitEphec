@@ -25,6 +25,7 @@ const CovoituragePage = () => {
     const navigate = useNavigate();
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
+    const [driver, SetDriver] = useState(false)
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -48,6 +49,7 @@ const CovoituragePage = () => {
                 const data = await response.json();
                 if (data.success) {
                     if (data.isDriver) {
+                        SetDriver(true)
                         fetchUserCars();
                     }
                     if (data.user.adresse) {
@@ -433,13 +435,6 @@ const CovoituragePage = () => {
             </div>
         );
     };
-    
-    
-    
-    
-    
-    
-    
 
     return (
         <div>
@@ -465,7 +460,7 @@ const CovoituragePage = () => {
                     />
                 </div>
                 <div>
-                    <label htmlFor="isDriver">Conducteur:</label>
+                    <label>Conducteur:</label>
                     <input 
                         type="checkbox" 
                         id="isDriver" 

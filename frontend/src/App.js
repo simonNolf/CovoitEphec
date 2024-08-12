@@ -8,7 +8,8 @@ import Inscription from './Inscription';
 import Connexion from './Connexion';
 import EditProfil from './EditProfil';
 import Covoiturage from './Covoiturage';
-import Logout from './Logout'; // Importer Logout
+import Logout from './Logout'; 
+import MesCovoiturages from './MesCovoiturages';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 
@@ -27,6 +28,7 @@ function App() {
           <Route path="/editProfil" element={<EditProfil />} />
           <Route path="/covoiturage" element={<Covoiturage />} />
           <Route path="/logout" element={<Logout />} />
+          <Route path="/mescovoit" element={<MesCovoiturages />} />
           {/* Rediriger vers /login si l'utilisateur n'est pas connecté */}
           <Route path="*" element={isLoggedIn ? <Navigate to="/profil" /> : <Navigate to="/login" />} />
         </Routes>
@@ -41,6 +43,9 @@ function App() {
               </li>
               <li>
                 <Link to="/covoiturage">Covoiturage</Link>
+              </li>
+              <li>
+                <Link to="/mescovoit">Mes Covoiturages</Link>
               </li>
             </ul>
           </nav>
