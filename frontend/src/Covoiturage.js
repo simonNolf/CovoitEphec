@@ -25,7 +25,6 @@ const CovoituragePage = () => {
     const navigate = useNavigate();
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
-    console.log(propositions)
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -222,7 +221,6 @@ const CovoituragePage = () => {
     
     // Obtenir le nombre de places de la voiture sélectionnée, ou null si la voiture n'est pas trouvée
     const carPlaces = selectedCarData ? selectedCarData.places : null;
-        console.log(carPlaces)
 
         const covoiturageData = {
             date,
@@ -338,49 +336,106 @@ const CovoituragePage = () => {
     const renderCovoiturageDetails = () => {
         if (!selectedCovoiturage) return null;
     
-        const handleAccept = () => {
-            if (selectedCovoiturage.id) {
-                alert(`Type: ${selectedCovoiturage.type}\nID du covoiturage : ${selectedCovoiturage.id}\nDate : ${selectedCovoiturage.date.split('T')[0]}\nHeure : ${selectedCovoiturage.heure}\nAdresse : ${selectedCovoiturage.decodedAddress || 'Adresse non disponible'}`);
-            } else {
-                alert('ID non disponible');
+    
+        const handleAccept = async () => {
+            try {
+                const acceptCovoiturageData = {
+                    covoiturageId: selectedCovoiturage.id,
+                    type: selectedCovoiturage.type,
+                    selectedCar: selectedCovoiturage.type === 'Demande' ? selectedCar : null,
+                };
+    
+                const response = await fetch(`${apiUrl}/acceptCovoiturage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'token': token, // Le token est envoyé dans les headers
+                    },
+                    body: JSON.stringify(acceptCovoiturageData),
+                });
+    
+                const data = await response.json();
+    
+                if (data.success) {
+                    toast.success('Covoiturage accepté avec succès');
+                    fetchCovoiturages(); // Rafraîchir la liste des covoiturages
+                    setSelectedCovoiturage(null); // Réinitialiser la sélection
+                } else {
+                    toast.error(`Erreur lors de l'acceptation: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'acceptation du covoiturage:', error);
+                toast.error('Erreur lors de l\'acceptation du covoiturage');
             }
         };
     
         return (
             <div>
-    <h2>Détails du covoiturage</h2>
-    <p>Date: {selectedCovoiturage.date.split('T')[0]}</p>
-    <p>Heure: {selectedCovoiturage.heure}</p>
-    <p>Adresse: {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}</p>
-
-    {/* Affiche le nombre de places restantes seulement s'il s'agit d'une proposition */}
-    {selectedCovoiturage.type === 'Proposition' && (
-        <p>Places restantes: {selectedCovoiturage.placesRestantes}</p>
-    )}
-
-    {selectedCovoiturage.coordinates && (
-        <div style={{ height: '400px', width: '100%' }}>
-            <MapContainer center={selectedCovoiturage.coordinates} zoom={13} style={{ height: '100%', width: '100%' }}>
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <Marker position={selectedCovoiturage.coordinates} icon={customIcon}>
-                    <Popup>
-                        {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}
-                    </Popup>
-                </Marker>
-            </MapContainer>
-        </div>
-    )}
-
-    <button onClick={handleAccept} style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-        Accepter
-    </button>
-</div>
-
+                <h2>Détails du covoiturage</h2>
+                <p>Date: {selectedCovoiturage.date.split('T')[0]}</p>
+                <p>Heure: {selectedCovoiturage.heure}</p>
+                <p>Adresse: {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}</p>
+    
+                {selectedCovoiturage.type === 'Proposition' && (
+                    <p>Places restantes: {selectedCovoiturage.placesRestantes}</p>
+                )}
+    
+                {selectedCovoiturage.coordinates && (
+                    <div style={{ height: '400px', width: '100%' }}>
+                        <MapContainer center={selectedCovoiturage.coordinates} zoom={13} style={{ height: '100%', width: '100%' }}>
+                            <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            />
+                            <Marker position={selectedCovoiturage.coordinates} icon={customIcon}>
+                                <Popup>
+                                    {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}
+                                </Popup>
+                            </Marker>
+                        </MapContainer>
+                    </div>
+                )}
+    
+                {/* Afficher la liste déroulante des voitures si c'est une demande */}
+                {selectedCovoiturage.type === 'Demande' && (
+                    <div>
+                        <label>Choisissez une voiture:</label>
+                        <select
+                            value={selectedCar}
+                            onChange={(e) => setSelectedCar(e.target.value)}
+                            required
+                        >
+                            <option value="">Sélectionner une voiture</option>
+                            {userCars.map((car) => (
+                                <option key={car.id} value={car.id}>
+                                    {car.name} ({car.places} places)
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+    
+                <button
+                    onClick={handleAccept}
+                    style={{
+                        marginTop: '20px',
+                        padding: '10px 20px',
+                        backgroundColor: '#4CAF50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                    }}
+                    disabled={selectedCovoiturage.type === 'Demande' && !selectedCar} // Désactiver le bouton si aucune voiture n'est sélectionnée pour une demande
+                >
+                    Accepter
+                </button>
+            </div>
         );
     };
+    
+    
+    
     
     
     
@@ -439,35 +494,48 @@ const CovoituragePage = () => {
                 <button type="submit">Envoyer</button>
             </form>
 
-            <h2>Demandes de covoiturage</h2>
-            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-                <tbody>
-                    {demandes.map((demande) => (
-                        <tr key={demande.id} style={{ borderBottom: '1px solid #ccc' }}>
-                            <td>date : {demande.date.split('T')[0]}</td>
-                            <td>heure : {demande.heure}</td>
-                            <td>
-    <button onClick={() => handleCovoiturageClick(demande, 'Demande')}>Voir les détails</button>
-</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            {demandes.length > 0 && (
+    <div>
+        <h2>Demandes de covoiturage</h2>
+        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+            <tbody>
+                {demandes.map((demande) => (
+                    <tr key={demande.id} style={{ borderBottom: '1px solid #ccc' }}>
+                        <td>Date : {demande.date.split('T')[0]}</td>
+                        <td>Heure : {demande.heure}</td>
+                        <td>
+                            <button onClick={() => handleCovoiturageClick(demande, 'Demande')}>
+                                Voir les détails
+                            </button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    </div>
+)}
 
-            <h2>Propositions de covoiturage</h2>
-            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-                <tbody>
-                    {propositions.map((proposition) => (
-                        <tr key={proposition.id} style={{ borderBottom: '1px solid #ccc' }}>
-                            <td>date : {proposition.date.split('T')[0]}</td>
-                            <td>heure : {proposition.heure}</td>
-                            <td>
-    <button onClick={() => handleCovoiturageClick(proposition, 'Proposition')}>Voir les détails</button>
-</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+{propositions.length > 0 && (
+    <div>
+        <h2>Propositions de covoiturage</h2>
+        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+            <tbody>
+                {propositions.map((proposition) => (
+                    <tr key={proposition.id} style={{ borderBottom: '1px solid #ccc' }}>
+                        <td>Date : {proposition.date.split('T')[0]}</td>
+                        <td>Heure : {proposition.heure}</td>
+                        <td>
+                            <button onClick={() => handleCovoiturageClick(proposition, 'Proposition')}>
+                                Voir les détails
+                            </button>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    </div>
+)}
+
 
             {renderCovoiturageDetails()}
         </div>
