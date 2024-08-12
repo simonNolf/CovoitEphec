@@ -9,6 +9,7 @@ const Logout = () => {
     // Supprimer le token et le matricule de sessionStorage
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('matricule');
+    sessionStorage.removeItem('tokenExpiration')
     toast.success('Déconnexion réussie');
 
     // Rediriger vers la page de login

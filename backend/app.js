@@ -275,7 +275,7 @@ app.get('/demandes', async (req, res) => {
       const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
 
       // Query pour récupérer les demandes de covoiturage de l'utilisateur actuel
-      const demandes = await db.query(`SELECT * FROM demande WHERE demandeur = $1 and status ='en attente'order by date`, [matricule]);
+      const demandes = await db.query(`SELECT * FROM demande WHERE demandeur = $1 and status ='pending'order by date`, [matricule]);
 
       // Renvoyer les demandes de covoiturage avec success=true
       res.json({ success: true, demandes });
@@ -299,7 +299,7 @@ app.get('/getDemandes', async (req, res) => {
       const demandes = await db.query(`SELECT * 
           FROM demande 
           WHERE date >= NOW()
-          and status ='en attente' 
+          and status ='pending' 
           ORDER BY date ASC`);
       res.json({success: true, demandes});
   }
@@ -384,9 +384,45 @@ app.post('/acceptCovoiturage', async (req, res) => {
               return res.status(400).json({ success: false, message: 'Voiture non sélectionnée' });
           }
 
+          // Récupérer les détails de la voiture sélectionnée
+          const carData = await db.oneOrNone('SELECT places FROM car WHERE id = $1', [selectedCar]);
+          if (!carData) {
+              return res.status(404).json({ success: false, message: 'Voiture non trouvée' });
+          }
+
           // Assigner l'ID de la voiture sélectionnée à `id_car`
           covoiturageData.id_car = selectedCar;
           covoiturageData.id_conducteur = matricule; // Le conducteur est celui qui accepte la demande
+
+          // Insérer une nouvelle proposition basée sur la demande acceptée
+          await db.none(`
+              INSERT INTO proposition (matricule_conducteur, id_car, status, adresse, date, heure, places)
+              VALUES ($1, $2, 'accepter', (SELECT adresse FROM public.user_data WHERE matricule = $1), $3, $4, $5)
+          `, [matricule, selectedCar, covoiturageData.date, covoiturageData.heure, carData.places - 1]);
+
+          // Mettre à jour le statut de la demande en "acceptée"
+          await db.none(`
+              UPDATE ${tableName}
+              SET status = 'accepter'
+              WHERE id = $1
+          `, [covoiturageId]);
+      } else {
+          // Mettre à jour le statut de la proposition en "acceptée"
+          if (covoiturageData.places > 0) {
+              await db.none(`
+                  UPDATE proposition
+                  SET places = places - 1
+                  WHERE id = $1
+              `, [covoiturageId]);
+
+              await db.none(`
+                  UPDATE ${tableName}
+                  SET status = 'accepter'
+                  WHERE id = $1
+              `, [covoiturageId]);
+          } else {
+              return res.status(400).json({ success: false, message: 'Aucune place disponible' });
+          }
       }
 
       // Insérer les données dans la table `covoiturage`
@@ -395,39 +431,13 @@ app.post('/acceptCovoiturage', async (req, res) => {
           VALUES ($1, $2, $3, $4, $5, $6)
       `, [covoiturageData.id_conducteur, matricule, 'en attente', covoiturageData.date, covoiturageData.heure, covoiturageData.id_car]);
 
-      // Si c'est une proposition, réduire le nombre de places disponibles de 1
-      if (type === 'Proposition') {
-          if (covoiturageData.places > 0) {
-              await db.none(`
-                  UPDATE proposition
-                  SET places = places - 1
-                  WHERE id = $1
-              `, [covoiturageId]);
-          } else {
-              return res.status(400).json({ success: false, message: 'Aucune place disponible' });
-          }
-
-          // Mettre à jour le statut de la proposition en "acceptée"
-          await db.none(`
-              UPDATE ${tableName}
-              SET status = 'accepter'
-              WHERE id = $1
-          `, [covoiturageId]);
-      } else if (type === 'Demande') {
-          // Mettre à jour le statut de la demande en "acceptée"
-          await db.none(`
-              UPDATE ${tableName}
-              SET status = 'accepter'
-              WHERE id = $1
-          `, [covoiturageId]);
-      }
-
       res.json({ success: true, message: `${type} acceptée et enregistrée avec succès` });
   } catch (err) {
       console.error(err.message);
       res.status(500).send('Erreur Serveur');
   }
 });
+
 
 
 module.exports = app;
