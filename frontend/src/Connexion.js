@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { checkTokenExpiration } from './utils/tokenUtils';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ConnexionContainer = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [matricule, setMatricule] = useState('');
-  const [backendMessage, setBackendMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
   const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
 
@@ -38,12 +37,12 @@ const ConnexionContainer = () => {
         sessionStorage.setItem('token', data.token);
         sessionStorage.setItem('tokenExpiration', expirationTime);
         setMatricule(matricule);
-        setBackendMessage(data.message);
+        toast.success(data.message || 'Connexion réussie');
         navigate("/profil");
       } else {
         const errorData = await response.json();
-        setErrorMessage(errorData.message);
-        
+        toast.error(errorData.message || 'Échec de la connexion');
+
         if (process.env.NODE_ENV !== 'test') {
           console.error(errorData.message);
         }
@@ -52,7 +51,7 @@ const ConnexionContainer = () => {
       if (process.env.NODE_ENV !== 'test') {
         console.error('Erreur lors de la connexion :', error);
       }
-      setErrorMessage('Erreur lors de la connexion. Veuillez réessayer.');
+      toast.error('Erreur lors de la connexion. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
@@ -72,6 +71,7 @@ const ConnexionContainer = () => {
 
   return (
     <>
+      <ToastContainer />
       {loading && <div>Chargement...</div>}
       <form className="centered-container" onSubmit={handleSubmit}>
         {matricule && (
@@ -89,7 +89,6 @@ const ConnexionContainer = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
         <button type="submit">Se connecter</button>
       </form>
     </>

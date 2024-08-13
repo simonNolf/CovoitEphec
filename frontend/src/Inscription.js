@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const isSqlInjectionSafe = (input) => {
     // eslint-disable-next-line no-useless-escape
@@ -16,7 +18,6 @@ const InscriptionContainer = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
     const apiUrl = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
@@ -32,19 +33,19 @@ const InscriptionContainer = () => {
 
         // Vérifiez si les mots de passe correspondent
         if (password !== confirmPassword) {
-            setErrorMessage('Les mots de passe ne correspondent pas.');
+            toast.error('Les mots de passe ne correspondent pas.');
             return;
         }
 
         // Vérifiez la sécurité contre l'injection SQL
         if (!isSqlInjectionSafe(password) || !isSqlInjectionSafe(confirmPassword)) {
-            setErrorMessage('Potentielle injection SQL');
+            toast.error('Potentielle injection SQL détectée.');
             return;
         }
 
         // Vérifiez la robustesse du mot de passe
         if (!isPasswordSecure(password)) {
-            setErrorMessage('Le mot de passe ne remplit pas les prérequis de sécurité (1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial, et au moins 8 caractères)');
+            toast.error('Le mot de passe ne remplit pas les prérequis de sécurité (1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial, et au moins 8 caractères).');
             return;
         }
 
@@ -63,13 +64,13 @@ const InscriptionContainer = () => {
             });
 
             if (response.ok) {
-                setErrorMessage('');
+                toast.success('Veuillez vérifier vos emails pour la confirmation.');
             } else {
-                setErrorMessage('Échec de l\'inscription.');
+                toast.error('Échec de l\'inscription.');
             }
         } catch (error) {
             console.error('Erreur lors de l\'inscription :', error);
-            setErrorMessage('Erreur lors de l\'inscription.');
+            toast.error('Erreur lors de l\'inscription.');
         } finally {
             setLoading(false);
         }
@@ -77,6 +78,7 @@ const InscriptionContainer = () => {
 
     return (
         <>
+            <ToastContainer />
             {loading && <div className="loading">Enregistrement en cours...</div>}
             <form className="centered-container" onSubmit={handleSubmit}>
                 {matricule && (
@@ -105,7 +107,6 @@ const InscriptionContainer = () => {
                 <button type='submit'>
                     S'inscrire
                 </button>
-                {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
             </form>
         </>
     );

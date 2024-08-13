@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const LoginComponent = () => {
   const [matricule, setMatricule] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,10 +81,11 @@ const LoginComponent = () => {
         sessionStorage.setItem('matricule', matricule);
         navigate('/inscription');
       } else {
-        setErrorMessage(`Le matricule : ${matricule} n'existe pas`);
+        toast.error(`Le matricule : ${matricule} n'existe pas`);
       }
     } catch (error) {
       console.error('Erreur lors de la vérification du matricule :', error);
+      toast.error('Erreur lors de la vérification du matricule. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
@@ -92,6 +93,7 @@ const LoginComponent = () => {
 
   return (
     <>
+      <ToastContainer />
       {loading && <div>Vérification en cours...</div>}
       <form className="centered-container" onSubmit={handleSubmit}>
         <input
@@ -103,7 +105,6 @@ const LoginComponent = () => {
           placeholder="votre matricule"
           onChange={(e) => setMatricule(e.target.value)}
         />
-        {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
         <button type="submit">Suivant</button>
       </form>
     </>

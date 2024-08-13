@@ -32,6 +32,9 @@ const CovoituragePage = () => {
             toast.error('Votre session a expiré');
             navigate('/login');
         };
+        if (!token) {
+            toast.error('Merci de vous connecter');
+            navigate('/login');}
 
         if (checkTokenExpiration(handleTokenExpiration)) {
             return;
