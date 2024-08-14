@@ -29,7 +29,10 @@ const LoginComponent = () => {
         setMatricule(matriculeFromQuery || '');
       }
     }
-  }, [location.search, navigate]);
+    if (location.state?.showToast) {
+      toast.error('Merci de vous connecter pour accéder à cette page');
+    }
+  }, [location.search, navigate, location]);
 
   async function fetchCSVData() {
     const csvUrl = 'data.csv';

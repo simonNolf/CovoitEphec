@@ -483,7 +483,7 @@ return (
                             )}
                         </div>
                     ) : (
-                        <p>Vous n'avez ni propositions ni demandes de covoiturage pour le moment.</p>
+                        <p>Vous n'avez ni propositions ni demandes de covoiturage pour le moment. Consulter <a href='/mesCovoit'>vos covoiturages</a> pour voir si il faut que vous en confirmiez</p>
                     )}
                 </div>
             ) : (
