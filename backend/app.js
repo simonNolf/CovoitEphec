@@ -353,16 +353,19 @@ app.get('/getPropositions', async (req, res) => {
 app.post('/acceptCovoiturage', async (req, res) => {
   const receivedToken = req.headers.token;
 
+  // Vérification de la présence du token dans les en-têtes
   if (!receivedToken) {
       return res.status(401).json({ success: false, message: 'Token manquant dans les en-têtes' });
   }
 
   try {
+      // Décodage et vérification du token
       const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
       const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
 
       const { covoiturageId, type, selectedCar } = req.body;
 
+      // Validation du type de covoiturage
       if (!['Proposition', 'Demande'].includes(type)) {
           return res.status(400).json({ success: false, message: 'Type invalide' });
       }
@@ -371,7 +374,8 @@ app.post('/acceptCovoiturage', async (req, res) => {
 
       let covoiturageData;
 
-      if (tableName === 'proposition') {
+      if (type === 'Proposition') {
+          // Traitement des propositions
           covoiturageData = await db.oneOrNone(`
               SELECT matricule_conducteur AS id_conducteur, date, heure, places, id_car, email_conducteur, email_passager
               FROM ${tableName}
@@ -379,9 +383,28 @@ app.post('/acceptCovoiturage', async (req, res) => {
           `, [covoiturageId]);
 
           if (!covoiturageData) {
-              return res.status(404).json({ success: false, message: `${type} non trouvée` });
+              return res.status(404).json({ success: false, message: 'Proposition non trouvée' });
           }
-      } else if (tableName === 'demande') {
+
+          if (covoiturageData.places <= 0) {
+              return res.status(400).json({ success: false, message: 'Aucune place disponible' });
+          }
+
+          // Insérer le nouveau covoiturage
+          await db.none(`
+              INSERT INTO covoiturage (id_conducteur, passager, status, date, heure, id_car)
+              VALUES ($1, $2, $3, $4, $5, $6)
+          `, [covoiturageData.id_conducteur, matricule, 'pending', covoiturageData.date, covoiturageData.heure, covoiturageData.id_car]);
+
+          // Mettre à jour la proposition
+          await db.none(`
+              UPDATE ${tableName}
+              SET places = places - 1, status = 'accepter'
+              WHERE id = $1
+          `, [covoiturageId]);
+
+      } else if (type === 'Demande') {
+          // Traitement des demandes
           covoiturageData = await db.oneOrNone(`
               SELECT demandeur AS email_passager, date, heure
               FROM ${tableName}
@@ -389,52 +412,31 @@ app.post('/acceptCovoiturage', async (req, res) => {
           `, [covoiturageId]);
 
           if (!covoiturageData) {
-              return res.status(404).json({ success: false, message: `${type} non trouvée` });
+              return res.status(404).json({ success: false, message: 'Demande non trouvée' });
           }
 
           if (!selectedCar) {
               return res.status(400).json({ success: false, message: 'Voiture non sélectionnée' });
           }
 
-          covoiturageData.id_car = selectedCar;
-          covoiturageData.id_conducteur = matricule;
-          // Supposons que l'adresse e-mail du conducteur soit obtenue à partir d'un autre appel
-          covoiturageData.email_conducteur = 'conducteur@example.com'; // Remplacez par la méthode appropriée
-      }
-
-      await db.none(`
-          INSERT INTO covoiturage (id_conducteur, passager, status, date, heure, id_car)
-          VALUES ($1, $2, $3, $4, $5, $6)
-      `, [covoiturageData.id_conducteur, matricule, 'pending', covoiturageData.date, covoiturageData.heure, covoiturageData.id_car]);
-
-      if (type === 'Proposition') {
-          if (covoiturageData.places > 0) {
-              await db.none(`
-                  UPDATE proposition
-                  SET places = places - 1
-                  WHERE id = $1
-              `, [covoiturageId]);
-          } else {
-              return res.status(400).json({ success: false, message: 'Aucune place disponible' });
-          }
-
+          // Mettre à jour la demande pour accepter la demande
           await db.none(`
               UPDATE ${tableName}
               SET status = 'accepter'
               WHERE id = $1
           `, [covoiturageId]);
-      } else if (type === 'Demande') {
+
+          // Insérer les détails dans la table covoiturage
           await db.none(`
-              UPDATE ${tableName}
-              SET status = 'accepter'
-              WHERE id = $1
-          `, [covoiturageId]);
+              INSERT INTO covoiturage (id_conducteur, passager, status, date, heure, id_car)
+              VALUES ($1, $2, $3, $4, $5, $6)
+          `, [matricule, covoiturageData.email_passager, 'pending', covoiturageData.date, covoiturageData.heure, selectedCar]);
       }
 
       // Envoyer les e-mails
       const mailOptions = {
           from: process.env.EMAIL_USER,
-          to: `simon.nolf@gmail.com`,
+          to: `simon.nolf@gmail.com`,  // Remplacer par l'email approprié
           subject: 'Covoiturage Accepté',
           text: `Votre covoiturage a été accepté. Veuillez confirmer les détails sur la page "Mes Covoiturages".`
       };
@@ -447,6 +449,7 @@ app.post('/acceptCovoiturage', async (req, res) => {
       res.status(500).send('Erreur Serveur');
   }
 });
+
 
 
 app.get('/getCovoitUser', async (req, res) => {
@@ -463,15 +466,22 @@ app.get('/getCovoitUser', async (req, res) => {
 
     // Requête pour récupérer les covoiturages où l'utilisateur est conducteur ou passager
     const covoiturages = await db.query(`
-      SELECT c.*, car.name
+      SELECT c.*, 
+       car.name AS car_name,
+       uc.adresse AS adresse_conducteur, 
+       up.adresse AS adresse_passager, 
+       uc.numero AS numéro_conducteur, 
+       up.numero AS numéro_passager
 FROM covoiturage c
 JOIN car ON c.ID_CAR = car.id
+JOIN user_data uc ON c.id_conducteur = uc.matricule
+JOIN user_data up ON c.passager = up.matricule
 WHERE (c.id_conducteur = $1 OR c.passager = $1)
-  AND c.date >= NOW()
+  AND c.date > current_date
 ORDER BY c.date ASC;
 
+
     `, [matricule]);
-    console.log(covoiturages)
 
     res.json({ success: true, covoiturages });
   } catch (err) {
@@ -520,6 +530,47 @@ app.post('/updateCovoitStatus', async (req, res) => {
       res.status(500).send('Erreur Serveur');
   }
 });
+
+app.get('/getTodayCovoit', async (req, res) => {
+  const receivedToken = req.headers.token; // Récupérer le token depuis les en-têtes de la requête
+
+  if (!receivedToken) {
+    return res.status(401).json({ success: false, message: 'Token manquant dans les en-têtes' });
+  }
+
+  try {
+    // Vérifier et décoder le token
+    const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+    const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+
+    // Requête pour récupérer les covoiturages de l'utilisateur (conducteur ou passager) pour aujourd'hui
+    const covoiturages = await db.query(`
+      SELECT c.*, 
+       up.adresse AS adresse_passager, 
+       up.numero AS numéro_passager, 
+       uc.adresse AS adresse_conducteur,
+       uc.numero AS numéro_conducteur
+FROM covoiturage c
+JOIN user_data up ON c.passager = up.matricule
+JOIN user_data uc ON c.id_conducteur = uc.matricule
+WHERE c.date = current_date
+  AND (c.id_conducteur = $1 OR c.passager = $1);
+
+
+    `, [matricule]);
+
+    res.json({ success: true, covoiturages });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Erreur Serveur');
+  }
+});
+
+
+
+
+
+
 
 
 module.exports = app;
