@@ -566,10 +566,65 @@ WHERE c.date = current_date
   }
 });
 
+app.post('/verifCovoit', async (req, res) => {
+  const { covoiturageId, passagerLatitude, passagerLongitude, latitude, longitude } = req.body;
+  console.log(covoiturageId)
+  const receivedToken = req.headers.token;
 
+  if (!receivedToken) {
+      return res.status(401).json({ success: false, message: 'Token manquant dans les en-têtes' });
+  }
 
+  try {
+      // Vérifier et décoder le token
+      const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+      
+      // Récupérer le matricule de l'utilisateur à partir du token
+      const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
 
+      // Vérifier si le matricule correspond au passager du covoiturage
+      const passagerVerification = await db.oneOrNone(
+          'SELECT matricule FROM public.covoiturages WHERE id = $1 AND matricule_passager = $2',
+          [covoiturageId, matricule]
+      );
 
+      if (passagerVerification) {
+          return res.status(403).json({ success: false, message: 'Vous n\'êtes pas le conducteur.' });
+      }
+
+      // Vérifier si l'ID du covoiturage est déjà présent dans la table verifCovoit
+      const existingVerification = await db.oneOrNone('SELECT id FROM public."verifCovoit" WHERE id_covoit = $1', [covoiturageId]);
+
+      if (existingVerification) {
+          return res.status(400).json({ success: false, message: 'Vérification déjà effectuée pour ce covoiturage.' });
+      }
+
+      // Comparaison des coordonnées
+      const passagerLat = parseFloat(passagerLatitude).toFixed(2);
+      const passagerLon = parseFloat(passagerLongitude).toFixed(2);
+
+      const userLat = parseFloat(latitude).toFixed(2);
+      const userLon = parseFloat(longitude).toFixed(2);
+
+      const latDifference = Math.abs(passagerLat - userLat);
+      const lonDifference = Math.abs(passagerLon - userLon);
+
+      if (latDifference <= 0.01 && lonDifference <= 0.01) {
+          // Enregistrement dans la table de vérification
+          await db.none('INSERT INTO public."verifCovoit" (id_covoit, verification) VALUES ($1, $2)', [covoiturageId, true]);
+          
+          // Ajouter 1 point dans la colonne "point" de la table "user"
+          await db.none('UPDATE public.user_data SET points = points + 1 WHERE matricule = $1', [matricule]);
+
+          return res.json({ success: true, message: 'Vérification réussie et point ajouté' });
+      } else {
+          return res.json({ success: false, message: "Vous êtes trop loin de l'adresse" });
+      }
+  } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Erreur Serveur');
+  }
+});
 
 
 

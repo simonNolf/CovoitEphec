@@ -166,47 +166,62 @@ const MesCovoiturages = () => {
         }
     };
 
-    const markAtMeetingPoint = async () => {
+    const verification = async (covoiturageId, passagerCoords) => {
         if (!navigator.geolocation) {
             toast.error('La géolocalisation n\'est pas disponible.');
             return;
         }
-
+    
+        // Vérifier que les coordonnées du passager existent
+        if (!passagerCoords || !passagerCoords.y || !passagerCoords.x) {
+            toast.error('Les coordonnées du passager ne sont pas disponibles.');
+            return;
+        }
+    
         navigator.geolocation.getCurrentPosition(async position => {
             const { latitude, longitude } = position.coords;
-
+            setUserLocation({ lat: latitude, lng: longitude });
+    
             try {
-                const response = await fetch(`${apiUrl}/updateUserLocation`, {
+                const response = await fetch(`${apiUrl}/verifCovoit`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'token': token
                     },
                     body: JSON.stringify({
-                        userId: sessionStorage.getItem('userId'), // Remplacez ceci par la méthode appropriée pour obtenir l'ID utilisateur
-                        latitude,
-                        longitude
+                        covoiturageId,  // ID du covoiturage
+                        passagerLatitude: passagerCoords.y,  // Latitude du passager
+                        passagerLongitude: passagerCoords.x, // Longitude du passager
+                        latitude,  // Latitude actuelle de l'utilisateur
+                        longitude  // Longitude actuelle de l'utilisateur
                     })
                 });
-
+    
                 const data = await response.json();
-
-                if (data.success) {
-                    toast.success('Votre position a été enregistrée.');
-                    setUserLocation({ lat: latitude, lng: longitude });
+    
+                if (response.ok) {
+                    if (data.success) {
+                        toast.success(data.message || 'Votre position a été enregistrée.');
+                    } else {
+                        toast.error(data.message || 'Erreur lors de la vérification.');
+                    }
                 } else {
-                    toast.error(data.message);
+                    // Gérer les erreurs liées aux réponses non réussies (status code >= 400)
+                    toast.error(data.message || 'Erreur de serveur. Veuillez réessayer.');
                 }
             } catch (error) {
-                console.error('Erreur lors de l\'enregistrement de la position:', error);
-                toast.error('Erreur lors de l\'enregistrement de la position.');
+                console.error('Erreur lors de l\'envoi des coordonnées:', error);
+                toast.error('Erreur lors de l\'envoi des coordonnées.');
             }
         }, error => {
             toast.error('Erreur de géolocalisation.');
             console.error('Erreur de géolocalisation:', error);
         });
     };
-
+    
+    
+    
     return (
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div style={{ flex: 1, marginRight: '20px' }}>
@@ -362,9 +377,14 @@ const MesCovoiturages = () => {
                             ) : (
                                 <p>Adresse du conducteur ou du passager non disponible</p>
                             )}
-                            <button onClick={markAtMeetingPoint} style={{ marginTop: '10px' }}>
+                            <button 
+                                onClick={() => verification(covoit.id, covoit.adresse_passager)} 
+                                style={{ marginTop: '10px' }}
+                            >
                                 Je suis au point de rendez-vous
                             </button>
+
+
                         </div>
                     ))
                 ) : (

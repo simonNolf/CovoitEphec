@@ -20,6 +20,7 @@ const Profil = () => {
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
     const navigate = useNavigate();
+    console.log(user)
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -364,6 +365,7 @@ return (
                         <p>Prénom: {user.prenom}</p>
                         <p>Adresse: {decodedAddress}</p>
                         <p>Numéro de téléphone: {user.numero}</p>
+                        <p>Nombre de points: {user.points}</p>
                     </>
                 ) : (
                     <p>Chargement des informations...</p>
