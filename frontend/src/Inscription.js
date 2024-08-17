@@ -64,7 +64,7 @@ const InscriptionContainer = () => {
             });
 
             if (response.ok) {
-                toast.success('Veuillez vérifier vos emails pour la confirmation.');
+                toast.success('Veuillez vérifier vos emails pour la confirmation. Pensez a consulter vos spams');
             } else {
                 toast.error('Échec de l\'inscription.');
             }

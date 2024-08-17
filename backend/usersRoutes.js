@@ -93,6 +93,8 @@ app.post('/login', async (req, res) => {
           res.status(401).json({ success: false, message: 'Votre compte est en attente. Veuillez consulter vos e-mails pour activer votre compte.' });
         } else if (user.status === 'archived') {
           res.status(401).json({ success: false, message: 'Votre compte est archivé. Veuillez contacter le secrétariat pour plus d\'informations.' });
+        } else if (user.status === 'banned') {
+          res.status(401).json({ success: false, message: 'Votre compte est banni. Veuillez contacter le secrétariat pour plus d\'informations.' });
         }
       } else {
         res.status(401).json({ success: false, message: 'Mot de passe incorrect' });

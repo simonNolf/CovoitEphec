@@ -193,7 +193,7 @@ const Admin = () => {
                 <option value="all">Tous</option>
                 <option value="active">Actif</option>
                 <option value="banned">Banni</option>
-                <option value="inactive">Inactif</option>
+                <option value="archived">Inactif</option>
             </select>
 
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -324,9 +324,9 @@ const Admin = () => {
                             <input 
                                 type="radio" 
                                 name="status" 
-                                value="inactive"
-                                checked={selectedUser.status === 'inactive'}
-                                onChange={() => handleStatusChange('inactive')} 
+                                value="archived"
+                                checked={selectedUser.status === 'archived'}
+                                onChange={() => handleStatusChange('archived')} 
                             />
                             Inactif
                         </label>

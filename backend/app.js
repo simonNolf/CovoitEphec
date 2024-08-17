@@ -742,7 +742,7 @@ app.post('/updateUserStatus', async (req, res) => {
     }
 
     const { matricule: userMatricule, status } = req.body;
-    const validStatuses = ['active', 'banned', 'inactive'];
+    const validStatuses = ['active', 'banned', 'archived'];
 
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Statut invalide' });
@@ -839,7 +839,7 @@ app.post('/anonymise', async (req, res) => {
       // Mise à jour du statut de l'utilisateur dans la table "public.user"
       await db.query(`
           UPDATE public."user"
-          SET status = 'inactive'
+          SET status = 'archived'
           WHERE matricule = $1
       `, [matricule]);
 
