@@ -1,12 +1,21 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import InscriptionContainer from '../Inscription';
 
 describe('InscriptionContainer', () => {
+  beforeEach(() => {
+    render(
+      <MemoryRouter>
+        <InscriptionContainer />
+      </MemoryRouter>
+    );
+  });
+
   test('renders matricule from query params', () => {
     sessionStorage.setItem('matricule', '123456');
 
+    // Re-render to update the component with new sessionStorage value
     render(
       <MemoryRouter>
         <InscriptionContainer />
@@ -16,14 +25,7 @@ describe('InscriptionContainer', () => {
     expect(screen.getByText(/matricule : 123456/i)).toBeInTheDocument();
   });
 
-  test('submits the form successfully', async () => {
-    render(
-      <MemoryRouter>
-        <InscriptionContainer />
-      </MemoryRouter>
-    );
-
-    // Simuler le remplissage du formulaire
+  test('submits the form successfully when passwords match', async () => {
     fireEvent.change(screen.getByPlaceholderText(/votre mot de passe/i), {
       target: { value: 'Password123#' },
     });
@@ -31,42 +33,31 @@ describe('InscriptionContainer', () => {
       target: { value: 'Password123#' },
     });
 
-    // Simuler la soumission du formulaire
-    fireEvent.click(screen.getByText(/s'inscrire/i));
+    fireEvent.click(screen.getByRole('button', { name: /s'inscrire/i }));
 
-    // Vérifier si le message d'erreur n'est pas affiché
-    expect(screen.queryByText('Erreur lors de l\'inscription.')).toBeNull();
+    // Attendre et vérifier l'absence du message d'erreur toast
+    await waitFor(() => {
+      expect(screen.queryByText('Erreur lors de l\'inscription.')).toBeNull();
+    });
   });
 
-  test('shows error message if passwords do not match', () => {
-    render(
-      <MemoryRouter>
-        <InscriptionContainer />
-      </MemoryRouter>
-    );
-
-    // Simuler le remplissage du formulaire
+  test('shows error toast message if passwords do not match', async () => {
     fireEvent.change(screen.getByPlaceholderText(/votre mot de passe/i), {
       target: { value: 'Password123#' },
     });
     fireEvent.change(screen.getByPlaceholderText(/confirmer le mot de passe/i), {
-      target: { value: 'Password123' }, // Ce mot de passe ne correspond pas
+      target: { value: 'Password123' },
     });
 
-    // Simuler la soumission du formulaire
-    fireEvent.click(screen.getByText(/s'inscrire/i));
+    fireEvent.click(screen.getByRole('button', { name: /s'inscrire/i }));
 
-    // Vérifier si le message d'erreur est affiché
-    expect(screen.getByText('Les mots de passe ne correspondent pas.')).toBeInTheDocument();
+    // Attendre et vérifier la présence du message d'erreur toast
+    await waitFor(() => {
+      expect(screen.getByText('Les mots de passe ne correspondent pas.')).toBeInTheDocument();
+    });
   });
 
-  test('shows error message for SQL injection', () => {
-    render(
-      <MemoryRouter>
-        <InscriptionContainer />
-      </MemoryRouter>
-    );
-
+  test('shows error toast message for SQL injection attempts', async () => {
     fireEvent.change(screen.getByPlaceholderText(/votre mot de passe/i), {
       target: { value: 'Password123\'' },
     });
@@ -75,31 +66,28 @@ describe('InscriptionContainer', () => {
       target: { value: 'Password123\'' },
     });
 
-    fireEvent.submit(screen.getByRole('button', { name: /s'inscrire/i }));
+    fireEvent.click(screen.getByRole('button', { name: /s'inscrire/i }));
 
-    // Vérifier si le message d'erreur est affiché
-    expect(screen.getByText('Potentielle injection SQL')).toBeInTheDocument();
+    // Attendre et vérifier la présence du message d'erreur toast
+    await waitFor(() => {
+      expect(screen.getByText('Potentielle injection SQL détectée.')).toBeInTheDocument();
+    });
   });
 
-  test('shows error message for weak password', () => {
-    render(
-      <MemoryRouter>
-        <InscriptionContainer />
-      </MemoryRouter>
-    );
-
+  test('shows error toast message for weak password', async () => {
     fireEvent.change(screen.getByPlaceholderText(/votre mot de passe/i), {
-      target: { value: 'password' }, // Mot de passe faible
+      target: { value: 'password' },
     });
 
     fireEvent.change(screen.getByPlaceholderText(/confirmer le mot de passe/i), {
-      target: { value: 'password' }, // Mot de passe faible
+      target: { value: 'password' },
     });
 
-    fireEvent.submit(screen.getByRole('button', { name: /s'inscrire/i }));
+    fireEvent.click(screen.getByRole('button', { name: /s'inscrire/i }));
 
-    // Vérifier si le message d'erreur est affiché
-    expect(screen.getByText(/prérequis de sécurité/i)).toBeInTheDocument();
+    // Attendre et vérifier la présence du message d'erreur toast
+    await waitFor(() => {
+      expect(screen.getByText(/prérequis de sécurité/i)).toBeInTheDocument();
+    });
   });
-
 });

@@ -8,7 +8,7 @@ import L from 'leaflet';
 import { checkTokenExpiration } from './utils/tokenUtils';
 import debounce from 'lodash.debounce';
 
-const CovoituragePage = () => {
+const Covoiturage = () => {
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
     const [address, setAddress] = useState('');
@@ -540,4 +540,4 @@ const CovoituragePage = () => {
     );
 };
 
-export default CovoituragePage;
+export default Covoiturage;

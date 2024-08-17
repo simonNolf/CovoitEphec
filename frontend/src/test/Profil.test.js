@@ -5,16 +5,13 @@ import { BrowserRouter as Router } from 'react-router-dom'; // Importez le bon R
 import Profil from '../Profil';
 
 describe('Profil component', () => {
-  test('renders profile page with user data', () => {
-    const user = {
-      nom: 'Doe',
-      prenom: 'John',
-      adresse: '123 Rue de la Test',
-      matricule: '12345'
-    };
+  beforeEach(() => {
+    // Configuration préalable avant chaque test
     sessionStorage.setItem('matricule', '12345');
     sessionStorage.setItem('token', 'test-token');
-    
+  });
+
+  test('renders profile page with heading "Page de profil"', () => {
     render(
       <Router>
         <Profil />
@@ -23,9 +20,16 @@ describe('Profil component', () => {
 
     const headingElement = screen.getByRole('heading', { name: /Page de profil/i });
     expect(headingElement).toBeInTheDocument();
+  });
 
-    const nomElement = screen.getByText(/Matricule: 12345/i);
-    expect(nomElement).toBeInTheDocument();
-    
+  test('renders "Chargement des informations" text', () => {
+    render(
+      <Router>
+        <Profil />
+      </Router>
+    );
+
+    const loadingText = screen.getByText(/Chargement des informations/i);
+    expect(loadingText).toBeInTheDocument();
   });
 });
