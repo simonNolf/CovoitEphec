@@ -1,6 +1,12 @@
-BEGIN;
-
--- Table: public.car
+CREATE TABLE IF NOT EXISTS public."user"
+(
+    matricule character varying(8) COLLATE pg_catalog."default" NOT NULL,
+    password character varying COLLATE pg_catalog."default" NOT NULL,
+    salt character varying COLLATE pg_catalog."default" NOT NULL,
+    status character varying COLLATE pg_catalog."default" NOT NULL DEFAULT 'pending'::character varying,
+    activation_expiration timestamp with time zone NOT NULL,
+    CONSTRAINT user_pkey PRIMARY KEY (matricule)
+)
 
 CREATE TABLE IF NOT EXISTS public.car
 (
@@ -14,10 +20,11 @@ CREATE TABLE IF NOT EXISTS public.covoiturage
 (
     id integer NOT NULL DEFAULT nextval('covoiturage_id_seq'::regclass),
     id_conducteur character varying COLLATE pg_catalog."default" NOT NULL,
-    passager integer NOT NULL,
     status character varying COLLATE pg_catalog."default" NOT NULL,
-    date timestamp without time zone NOT NULL,
-    heure timestamp without time zone NOT NULL,
+    heure time without time zone NOT NULL,
+    passager character varying COLLATE pg_catalog."default" NOT NULL,
+    id_car integer NOT NULL,
+    date date,
     CONSTRAINT covoiturage_pkey PRIMARY KEY (id),
     CONSTRAINT conducteur FOREIGN KEY (id_conducteur)
         REFERENCES public."user" (matricule) MATCH SIMPLE
@@ -26,16 +33,16 @@ CREATE TABLE IF NOT EXISTS public.covoiturage
         NOT VALID
 )
 
-CREATE TABLE IF NOT EXISTS public.covoiturage
+CREATE TABLE IF NOT EXISTS public.demande
 (
-    id integer NOT NULL DEFAULT nextval('covoiturage_id_seq'::regclass),
-    id_conducteur character varying COLLATE pg_catalog."default" NOT NULL,
-    passager integer NOT NULL,
+    id integer NOT NULL DEFAULT nextval('demande_id_seq'::regclass),
+    demandeur character varying COLLATE pg_catalog."default" NOT NULL,
     status character varying COLLATE pg_catalog."default" NOT NULL,
-    date timestamp without time zone NOT NULL,
-    heure timestamp without time zone NOT NULL,
-    CONSTRAINT covoiturage_pkey PRIMARY KEY (id),
-    CONSTRAINT conducteur FOREIGN KEY (id_conducteur)
+    date date NOT NULL,
+    heure time without time zone NOT NULL,
+    adresse point NOT NULL,
+    CONSTRAINT demande_pkey PRIMARY KEY (id),
+    CONSTRAINT demandeur FOREIGN KEY (demandeur)
         REFERENCES public."user" (matricule) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
@@ -49,14 +56,6 @@ CREATE TABLE IF NOT EXISTS public.etape
     CONSTRAINT etape_pkey PRIMARY KEY (id)
 )
 
-CREATE TABLE IF NOT EXISTS public.user_covoit
-(
-    id_etape integer NOT NULL,
-    id_covoit integer NOT NULL,
-    numero integer NOT NULL,
-    CONSTRAINT etape_covoit_pkey PRIMARY KEY (id_etape, id_covoit)
-);
-
 CREATE TABLE IF NOT EXISTS public.proposition
 (
     id integer NOT NULL DEFAULT nextval('propostition_id_seq'::regclass),
@@ -64,7 +63,7 @@ CREATE TABLE IF NOT EXISTS public.proposition
     id_car integer NOT NULL,
     status character varying COLLATE pg_catalog."default" NOT NULL DEFAULT 'pending'::character varying,
     adresse point NOT NULL,
-    date timestamp without time zone NOT NULL,
+    date date NOT NULL,
     heure time without time zone NOT NULL,
     places integer NOT NULL,
     CONSTRAINT propostition_pkey PRIMARY KEY (id),
@@ -97,14 +96,12 @@ CREATE TABLE IF NOT EXISTS public.token
         NOT VALID
 )
 
-CREATE TABLE IF NOT EXISTS public."user"
+CREATE TABLE IF NOT EXISTS public."verifCovoit"
 (
-    matricule character varying(8) COLLATE pg_catalog."default" NOT NULL,
-    password character varying COLLATE pg_catalog."default" NOT NULL,
-    salt character varying COLLATE pg_catalog."default" NOT NULL,
-    status character varying COLLATE pg_catalog."default" NOT NULL DEFAULT 'pending'::character varying,
-    activation_expiration timestamp with time zone NOT NULL,
-    CONSTRAINT user_pkey PRIMARY KEY (matricule)
+    id integer NOT NULL DEFAULT nextval('"verifCovoit_id_seq"'::regclass),
+    id_covoit integer NOT NULL,
+    verification boolean NOT NULL,
+    CONSTRAINT "verifCovoit_pkey" PRIMARY KEY (id_covoit)
 )
 
 CREATE TABLE IF NOT EXISTS public.user_car
@@ -149,6 +146,7 @@ CREATE TABLE IF NOT EXISTS public.user_data
     prenom character varying COLLATE pg_catalog."default",
     adresse point,
     numero integer,
+    points integer DEFAULT 0,
     CONSTRAINT user_data_pkey PRIMARY KEY (matricule),
     CONSTRAINT matricule FOREIGN KEY (matricule)
         REFERENCES public."user" (matricule) MATCH SIMPLE
@@ -172,6 +170,14 @@ CREATE TABLE IF NOT EXISTS public.user_role
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID
+)
+
+CREATE TABLE IF NOT EXISTS public."verifCovoit"
+(
+    id integer NOT NULL DEFAULT nextval('"verifCovoit_id_seq"'::regclass),
+    id_covoit integer NOT NULL,
+    verification boolean NOT NULL,
+    CONSTRAINT "verifCovoit_pkey" PRIMARY KEY (id_covoit)
 )
 
 ALTER TABLE IF EXISTS public.covoiturage
