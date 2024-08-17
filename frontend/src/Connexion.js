@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { checkTokenExpiration } from './utils/tokenUtils';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ConnexionContainer = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [matricule, setMatricule] = useState('');
-  const [backendMessage, setBackendMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const apiUrl = process.env.REACT_APP_API_URL; // Assurez-vous que cette variable d'environnement est définie dans votre configuration React
+  const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,7 +20,7 @@ const ConnexionContainer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
       setLoading(true);
       const response = await fetch(`${apiUrl}/users/login`, {
@@ -27,25 +28,21 @@ const ConnexionContainer = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          matricule,
-          password,
-        }),
+        body: JSON.stringify({ matricule, password }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
-        
-        // Assigne le token au session storage
+        const expirationTime = new Date().getTime() + 3600000; // 1 heure en millisecondes
         sessionStorage.setItem('token', data.token);
-        
-        setBackendMessage(data.message);
+        sessionStorage.setItem('tokenExpiration', expirationTime);
+        setMatricule(matricule);
+        toast.success(data.message || 'Connexion réussie');
         navigate("/profil");
       } else {
         const errorData = await response.json();
-        setErrorMessage(errorData.message);
-        
-        // Afficher le message d'erreur uniquement en dehors des tests
+        toast.error(errorData.message || 'Échec de la connexion');
+
         if (process.env.NODE_ENV !== 'test') {
           console.error(errorData.message);
         }
@@ -54,15 +51,27 @@ const ConnexionContainer = () => {
       if (process.env.NODE_ENV !== 'test') {
         console.error('Erreur lors de la connexion :', error);
       }
-      setErrorMessage('Erreur lors de la connexion. Veuillez réessayer.');
+      toast.error('Erreur lors de la connexion. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
   };
-  
+
+  useEffect(() => {
+    const handleTokenExpiration = () => {
+      toast.error('Votre session a expiré');
+      navigate('/login');
+    };
+
+    if (checkTokenExpiration(handleTokenExpiration)) {
+      // Le token est expiré et l'utilisateur a été redirigé
+      return;
+    }
+  }, [navigate]);
 
   return (
     <>
+      <ToastContainer />
       {loading && <div>Chargement...</div>}
       <form className="centered-container" onSubmit={handleSubmit}>
         {matricule && (
@@ -80,7 +89,6 @@ const ConnexionContainer = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
         <button type="submit">Se connecter</button>
       </form>
     </>

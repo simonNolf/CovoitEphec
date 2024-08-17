@@ -65,8 +65,16 @@ app.post('/login', async (req, res) => {
           // Générer un nouveau token à chaque connexion
           const firstToken = crypto.randomBytes(64).toString('hex');
 
-          // Enregistrer le nouveau token dans la table token
-          await db.none('INSERT INTO public.token (matricule, token, created_at, expires_to) VALUES ($1, $2, NOW(), NOW() + INTERVAL \'1 hour\')', [user.matricule, firstToken]);
+          // Vérifier et mettre à jour ou insérer le token dans la table token
+          await db.tx(async t => {
+            const existingToken = await t.oneOrNone('SELECT token FROM public.token WHERE matricule = $1', [user.matricule]);
+
+            if (existingToken) {
+              await t.none('UPDATE public.token SET token = $2, created_at = NOW(), expires_to = NOW() + INTERVAL \'1 hour\' WHERE matricule = $1', [user.matricule, firstToken]);
+            } else {
+              await t.none('INSERT INTO public.token (matricule, token, created_at, expires_to) VALUES ($1, $2, NOW(), NOW() + INTERVAL \'1 hour\')', [user.matricule, firstToken]);
+            }
+          });
 
           // Vérifier si l'utilisateur a déjà une entrée dans la table user_data
           const existingUserData = await db.oneOrNone('SELECT * FROM user_data WHERE matricule = $1', [user.matricule]);
@@ -97,10 +105,6 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ success: false, message: 'Erreur lors de la connexion' });
   }
 });
-
-
-
-
 
 app.post('/register', async (req, res) => {
   try {
@@ -141,20 +145,31 @@ app.post('/register', async (req, res) => {
   }
 });
 
-app.post('/insert-user-data', async (req, res) => {
-  const { matricule, nom, prenom, adresse } = req.body;
+app.post('/updateUser', async (req, res) => {
+  const { matricule, nom, prenom, latitude, longitude, isDriver, numero } = req.body;
 
   try {
-    // Mise à jour des données utilisateur dans la table user_data
-    await db.none('UPDATE user_data SET nom = $2, prenom = $3, adresse = $4 WHERE matricule = $1', [matricule, nom, prenom, adresse]);
+    await db.none('UPDATE user_data SET nom = $2, prenom = $3, adresse = POINT($4, $5), numero=$6 WHERE matricule = $1', [matricule, nom, prenom, longitude, latitude, numero]);
     
-    // Réponse réussie
+    const existingUserRole = await db.oneOrNone('SELECT * FROM user_role WHERE matricule = $1', [matricule]);
+
+    if (existingUserRole) {
+      if (existingUserRole.id_role !== 3) { 
+        await db.none('UPDATE user_role SET id_role = $2 WHERE matricule = $1', [matricule, isDriver ? 2 : 1]);
+      }
+    } else {
+      await db.none('INSERT INTO user_role (matricule, id_role) VALUES ($1, $2)', [matricule, isDriver ? 2 : 1]);
+    }
+
     res.status(201).json({ success: true, message: 'Données utilisateur mises à jour avec succès.' });
   } catch (error) {
     console.error('Erreur lors de la mise à jour des données utilisateur :', error);
     res.status(500).json({ success: false, error: 'Erreur lors de la mise à jour des données utilisateur.' });
   }
 });
+
+
+
 
 
 module.exports = app; 

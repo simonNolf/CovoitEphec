@@ -4,15 +4,14 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "jest",
+        "test": "jest ",
         "start": "nodemon app.js"
     },
     "author": "",
     "license": "ISC",
     "devDependencies": {
         "jest": "^29.7.0",
-        "pg": "^8.11.3",
-        "supertest": "^6.3.4"
+        "supertest": "^7.0.0"
     },
     "jest": {
         "testEnvironment": "node"
@@ -21,12 +20,11 @@
         "bcryptjs": "^2.4.3",
         "body-parser": "^1.20.2",
         "cors": "^2.8.5",
-        "crypto": "^1.0.1",
         "dotenv": "^16.4.5",
         "express": "^4.18.3",
         "jsonwebtoken": "^9.0.2",
         "moment": "^2.30.1",
         "nodemailer": "^6.9.10",
-        "pg-promise": "^11.5.4"
+        "pg-promise": "^11.7.8"
     }
 }
