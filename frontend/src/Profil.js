@@ -147,7 +147,6 @@ const Profil = () => {
             console.error('Erreur:', error);
         }
     };
-    
 
     const fetchDemandes = async () => {
         try {
@@ -182,7 +181,6 @@ const Profil = () => {
                     }
                 }
 
-
                 setDemandes(demandesFiltered);
             } else {
                 console.error('Erreur:', data.message);
@@ -214,91 +212,114 @@ const Profil = () => {
             toast.error('Erreur lors de la suppression de la demande.');
         }
     };
-const deconnexion = () => {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('matricule');
-    navigate('/login');
-};
 
-const openModal = () => {
-    setModalIsOpen(true);
-};
+    const deconnexion = () => {
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('matricule');
+        navigate('/login');
+    };
 
-const closeModal = () => {
-    setModalIsOpen(false);
-};
+    const anonymiserUserData = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/anonymise`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                toast.success('Données anonymisées avec succès.');
+                deconnexion(); // Log out user after anonymization
+            } else {
+                toast.error('Erreur lors de l\'anonymisation des données.');
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'anonymisation des données:', error);
+            toast.error('Erreur lors de l\'anonymisation des données.');
+        }
+    };
 
-const openEditModal = (car) => {
-    setCurrentCar(car);
-    setCarName(car.name);
-    setCarSeats(car.places);
-    setEditModalIsOpen(true);
-};
+    const openModal = () => {
+        setModalIsOpen(true);
+    };
 
-const closeEditModal = () => {
-    setEditModalIsOpen(false);
-};
+    const closeModal = () => {
+        setModalIsOpen(false);
+    };
 
-const handleCarSubmit = async (event) => {
-    event.preventDefault();
-    try {
-        const response = await fetch(`${apiUrl}/addCar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'token': token,
-            },
-            body: JSON.stringify({
-                carName: carName.trim(),
-                carSeats: parseInt(carSeats, 10),
-            }),
-        });
-        const data = await response.json();
-        if (data.success) {
-            toast.success('Voiture ajoutée avec succès.');
-            closeModal();
-            setCarName('');
-            setCarSeats('');
-            fetchUserCars();
-        } else {
+    const openEditModal = (car) => {
+        setCurrentCar(car);
+        setCarName(car.name);
+        setCarSeats(car.places);
+        setEditModalIsOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setEditModalIsOpen(false);
+    };
+
+    const handleCarSubmit = async (event) => {
+        event.preventDefault();
+        try {
+            const response = await fetch(`${apiUrl}/addCar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+                body: JSON.stringify({
+                    carName: carName.trim(),
+                    carSeats: parseInt(carSeats, 10),
+                }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                toast.success('Voiture ajoutée avec succès.');
+                closeModal();
+                setCarName('');
+                setCarSeats('');
+                fetchUserCars();
+            } else {
+                toast.error('Erreur lors de l\'ajout de la voiture.');
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'ajout de la voiture:', error);
             toast.error('Erreur lors de l\'ajout de la voiture.');
         }
-    } catch (error) {
-        console.error('Erreur lors de l\'ajout de la voiture:', error);
-        toast.error('Erreur lors de l\'ajout de la voiture.');
-    }
-};
+    };
 
-const handleCarEdit = async (event) => {
-    event.preventDefault();
-    try {
-        const response = await fetch(`${apiUrl}/editCar`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'token': token,
-            },
-            body: JSON.stringify({
-                carId: currentCar.id,
-                carName: carName.trim(),
-                carSeats: parseInt(carSeats, 10),
-            }),
-        });
-        const data = await response.json();
-        if (data.success) {
-            toast.success('Voiture modifiée avec succès.');
-            closeEditModal();
-            setCarName('');
-            setCarSeats('');
-            fetchUserCars();
-        } else {
+    const handleCarEdit = async (event) => {
+        event.preventDefault();
+        try {
+            const response = await fetch(`${apiUrl}/editCar`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+                body: JSON.stringify({
+                    carId: currentCar.id,
+                    carName: carName.trim(),
+                    carSeats: parseInt(carSeats, 10),
+                }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                toast.success('Voiture modifiée avec succès.');
+                closeEditModal();
+                setCarName('');
+                setCarSeats('');
+                fetchUserCars();
+            } else {
+                toast.error('Erreur lors de la modification de la voiture.');
+            }
+        } catch (error) {
+            console.error('Erreur lors de la modification de la voiture:', error);
             toast.error('Erreur lors de la modification de la voiture.');
         }
-    } catch (error) {
-        console.error('Erreur lors de la modification de la voiture:', error);
-        toast.error('Erreur lors de la modification de la voiture.');
-    }
-};
+    };
 
     const deleteProposition = async(propositionId) => {
         console.log(propositionId)
@@ -323,132 +344,134 @@ const handleCarEdit = async (event) => {
             toast.error('Erreur lors de la suppression de la proposition.');
         }
     };
-const handleCarDelete = async (carId) => {
-    try {
-        const response = await fetch(`${apiUrl}/deleteCar`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'token': token,
-            },
-            body: JSON.stringify({ carId }),
-        });
-        const data = await response.json();
-        if (data.success) {
-            toast.success('Voiture supprimée avec succès.');
-            fetchUserCars();
-        } else {
+
+    const handleCarDelete = async (carId) => {
+        try {
+            const response = await fetch(`${apiUrl}/deleteCar`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+                body: JSON.stringify({ carId }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                toast.success('Voiture supprimée avec succès.');
+                fetchUserCars();
+            } else {
+                toast.error('Erreur lors de la suppression de la voiture.');
+            }
+        } catch (error) {
+            console.error('Erreur lors de la suppression de la voiture:', error);
             toast.error('Erreur lors de la suppression de la voiture.');
         }
-    } catch (error) {
-        console.error('Erreur lors de la suppression de la voiture:', error);
-        toast.error('Erreur lors de la suppression de la voiture.');
+    };
+
+    const allFieldsFilled = user?.nom && user?.prenom && decodedAddress;
+    if (allFieldsFilled) {
+        localStorage.setItem('adresse', decodedAddress);
+        localStorage.setItem('nom', user.nom);
+        localStorage.setItem('prenom', user.prenom);
+        localStorage.setItem('numero', user.numero);
     }
-};
 
-const allFieldsFilled = user?.nom && user?.prenom && decodedAddress;
-if (allFieldsFilled) {
-    localStorage.setItem('adresse', decodedAddress);
-    localStorage.setItem('nom', user.nom);
-    localStorage.setItem('prenom', user.prenom);
-    localStorage.setItem('numero', user.numero);
-}
-
-return (
-    <div>
-        <h1>Page de profil</h1>
-        {user ? (
-            <div>
-                {allFieldsFilled ? (
-                    <>
-                        <p>Nom: {user.nom}</p>
-                        <p>Prénom: {user.prenom}</p>
-                        <p>Adresse: {decodedAddress}</p>
-                        <p>Numéro de téléphone: {user.numero}</p>
-                        <p>Nombre de points: {user.points}</p>
-                    </>
-                ) : (
-                    <p>Chargement des informations...</p>
-                )}
-                {isDriver && (
-                    <>
-                        <h2>Mes voitures</h2>
-                        <ul>
-                            {userCars.map((car) => (
-                                <li key={car.id}>
-                                    {car.name} - {car.places} places
-                                    <button onClick={() => openEditModal(car)}>🖊️</button>
-                                    <button onClick={() => handleCarDelete(car.id)}>🗑️</button>
-                                </li>
-                            ))}
-                        </ul>
-                        <button onClick={openModal}>Ajouter une voiture</button>
-                        <Modal
-                            isOpen={modalIsOpen}
-                            onRequestClose={closeModal}
-                            contentLabel="Ajouter une Voiture"
-                        >
-                            <h2>Ajouter une Voiture</h2>
-                            <form onSubmit={handleCarSubmit}>
-                                <label>
-                                    Nom de la voiture:
-                                    <input
-                                        type="text"
-                                        value={carName}
-                                        onChange={(e) => setCarName(e.target.value)}
-                                        required
-                                    />
-                                </label>
-                                <label>
-                                    Nombre de places:
-                                    <input
-                                        type="number"
-                                        value={carSeats}
-                                        onChange={(e) => setCarSeats(e.target.value)}
-                                        required
-                                    />
-                                </label>
-                                <button type="submit">Ajouter</button>
-                                <button type="button" onClick={closeModal}>Annuler</button>
-                            </form>
-                        </Modal>
-                        <Modal
-                            isOpen={editModalIsOpen}
-                            onRequestClose={closeEditModal}
-                            contentLabel="Modifier une Voiture"
-                        >
-                            <h2>Modifier une Voiture</h2>
-                            <form onSubmit={handleCarEdit}>
-                                <label>
-                                    Nom de la voiture:
-                                    <input
-                                        type="text"
-                                        value={carName}
-                                        onChange={(e) => setCarName(e.target.value)}
-                                        required
-                                    />
-                                </label>
-                                <label>
-                                    Nombre de places:
-                                    <input
-                                        type="number"
-                                        value={carSeats}
-                                        onChange={(e) => setCarSeats(e.target.value)}
-                                        required
-                                    />
-                                </label>
-                                <button type="submit">Modifier</button>
-                                <button type="button" onClick={closeEditModal}>Annuler</button>
-                            </form>
-                        </Modal>
-                    </>
-                )}
-                {isAdmin && (
-                    <button onClick={() => navigate('/admin')}>Page Admin</button>
-                )}
-                <div style={{ marginTop: '20px' }}>
-                    <button onClick={() => navigate('/editProfil')}>Modifier le profil</button>
-                    <button onClick={deconnexion}>Déconnexion</button>
+    return (
+        <div>
+            <h1>Page de profil</h1>
+            {user ? (
+                <div>
+                    {allFieldsFilled ? (
+                        <>
+                            <p>Nom: {user.nom}</p>
+                            <p>Prénom: {user.prenom}</p>
+                            <p>Adresse: {decodedAddress}</p>
+                            <p>Numéro de téléphone: {user.numero}</p>
+                            <p>Nombre de points: {user.points}</p>
+                            <button onClick={anonymiserUserData}>Anonymiser</button> {/* Added anonymize button */}
+                        </>
+                    ) : (
+                        <p>Chargement des informations...</p>
+                    )}
+                    {isDriver && (
+                        <>
+                            <h2>Mes voitures</h2>
+                            <ul>
+                                {userCars.map((car) => (
+                                    <li key={car.id}>
+                                        {car.name} - {car.places} places
+                                        <button onClick={() => openEditModal(car)}>🖊️</button>
+                                        <button onClick={() => handleCarDelete(car.id)}>🗑️</button>
+                                    </li>
+                                ))}
+                            </ul>
+                            <button onClick={openModal}>Ajouter une voiture</button>
+                            <Modal
+                                isOpen={modalIsOpen}
+                                onRequestClose={closeModal}
+                                contentLabel="Ajouter une Voiture"
+                            >
+                                <h2>Ajouter une Voiture</h2>
+                                <form onSubmit={handleCarSubmit}>
+                                    <label>
+                                        Nom de la voiture:
+                                        <input
+                                            type="text"
+                                            value={carName}
+                                            onChange={(e) => setCarName(e.target.value)}
+                                            required
+                                        />
+                                    </label>
+                                    <label>
+                                        Nombre de places:
+                                        <input
+                                            type="number"
+                                            value={carSeats}
+                                            onChange={(e) => setCarSeats(e.target.value)}
+                                            required
+                                        />
+                                    </label>
+                                    <button type="submit">Ajouter</button>
+                                    <button type="button" onClick={closeModal}>Annuler</button>
+                                </form>
+                            </Modal>
+                            <Modal
+                                isOpen={editModalIsOpen}
+                                onRequestClose={closeEditModal}
+                                contentLabel="Modifier une Voiture"
+                            >
+                                <h2>Modifier une Voiture</h2>
+                                <form onSubmit={handleCarEdit}>
+                                    <label>
+                                        Nom de la voiture:
+                                        <input
+                                            type="text"
+                                            value={carName}
+                                            onChange={(e) => setCarName(e.target.value)}
+                                            required
+                                        />
+                                    </label>
+                                    <label>
+                                        Nombre de places:
+                                        <input
+                                            type="number"
+                                            value={carSeats}
+                                            onChange={(e) => setCarSeats(e.target.value)}
+                                            required
+                                        />
+                                    </label>
+                                    <button type="submit">Modifier</button>
+                                    <button type="button" onClick={closeEditModal}>Annuler</button>
+                                </form>
+                            </Modal>
+                        </>
+                    )}
+                    {isAdmin && (
+                        <button onClick={() => navigate('/admin')}>Page Admin</button>
+                    )}
+                    <div style={{ marginTop: '20px' }}>
+                        <button onClick={() => navigate('/editProfil')}>Modifier le profil</button>
+                        <button onClick={deconnexion}>Déconnexion</button>
                     </div>
                     {(propositions.length > 0 || demandes.length > 0) ? (
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -462,7 +485,6 @@ return (
                                                 {(new Date(proposition.date) > new Date(new Date().setDate(new Date().getDate() + 2))) && (
                                                     <button onClick={() => deleteProposition(proposition.id)}>🗑️</button>
                                                 )}
-
                                             </li>
                                         ))}
                                     </ul>
@@ -495,4 +517,3 @@ return (
     );
 };
 export default Profil;
-

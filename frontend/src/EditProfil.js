@@ -78,7 +78,6 @@ const EditProfil = () => {
             if (data.length > 0) {
                 const { lat, lon } = data[0];
                 // Utilisation des coordonnées géographiques dans la suite du traitement
-                console.log('Coordonnées géographiques :', lat, lon);
 
                 // Envoi du reste des données avec les coordonnées géographiques
                 const responseUpdate = await fetch(`${apiUrl}/users/updateUser`, {

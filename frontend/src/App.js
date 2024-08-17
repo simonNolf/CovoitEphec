@@ -9,6 +9,7 @@ import EditProfil from './EditProfil';
 import Covoiturage from './Covoiturage';
 import Logout from './Logout';
 import MesCovoiturages from './MesCovoiturages';
+import Admin from './Admin';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ProtectedRoute from './RoutrProtegees'; // Assurez-vous d'importer le composant
@@ -28,6 +29,7 @@ function App() {
           <Route path="/logout" element={<Logout />} />
           <Route path="/mescovoit" element={<ProtectedRoute><MesCovoiturages /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
+          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>}/>
         </Routes>
 
         <footer style={{ position: 'fixed', bottom: 0, width: '100%', backgroundColor: '#f8f9fa' }}>

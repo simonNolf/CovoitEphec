@@ -568,7 +568,6 @@ WHERE c.date = current_date
 
 app.post('/verifCovoit', async (req, res) => {
   const { covoiturageId, passagerLatitude, passagerLongitude, latitude, longitude } = req.body;
-  console.log(covoiturageId)
   const receivedToken = req.headers.token;
 
   if (!receivedToken) {
@@ -626,6 +625,235 @@ app.post('/verifCovoit', async (req, res) => {
   }
 });
 
+app.get('/getAllUsers', async (req, res) => {
+  const receivedToken = req.headers.token; // Récupérer le token de l'en-tête
+
+  if (!receivedToken) {
+    return res.status(401).json({ success: false, message: 'Token non valide' });
+  }
+
+  try {
+    // Décryptage du token reçu
+    const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+
+    // Vérification si l'utilisateur est admin
+    const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+    const userRole = await db.one('SELECT id_role FROM user_role WHERE matricule = $1', [matricule]);
+
+    if (userRole.id_role !== 3) { // Si l'utilisateur n'est pas admin
+      return res.status(403).json({ success: false, message: 'Accès refusé' });
+    }
+
+    // Récupération de tous les utilisateurs avec leur rôle et statut
+    const users = await db.any(`
+      SELECT ud.*, ur.id_role, u.status
+      FROM user_data ud
+      LEFT JOIN user_role ur ON ud.matricule = ur.matricule
+      LEFT JOIN public.user u ON ud.matricule = u.matricule
+    `);
+
+    // Ajout des rôles aux utilisateurs
+    const usersWithRoles = users.map(user => {
+      return {
+        ...user,
+        isDriver: user.id_role === 2,
+        isAdmin: user.id_role === 3,
+      };
+    });
+
+    res.json({ success: true, users: usersWithRoles });
+  } catch (error) {
+    console.error('Error:', error);
+    if (error.message === 'Invalid token') {
+      res.status(401).json({ success: false, message: 'Token non valide' });
+    } else {
+      res.status(500).json({ success: false, message: 'Erreur interne du serveur' });
+    }
+  }
+});
+
+
+app.post('/updateUserRole', async (req, res) => {
+  const receivedToken = req.headers.token; // Récupérer le token de l'en-tête
+  const { matricule, isAdmin } = req.body;
+
+
+  if (!receivedToken) {
+      return res.status(401).json({ success: false, message: 'Token non valide' });
+  }
+
+  if (!matricule || typeof isAdmin !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'Matricule ou statut administrateur manquant.' });
+  }
+
+  try {
+      // Décryptage du token reçu pour vérifier l'utilisateur et son rôle
+      const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+
+      const tokenQuery = 'SELECT matricule FROM public.token WHERE token = $1';
+      const userQuery = 'SELECT id_role FROM user_role WHERE matricule = $1';
+      
+      const { matricule: userMatricule } = await db.one(tokenQuery, [decodedToken.firstToken]);
+
+      const userRole = await db.one(userQuery, [userMatricule]);
+
+      if (userRole.id_role !== 3) { // Si l'utilisateur n'est pas admin
+          return res.status(403).json({ success: false, message: 'Accès refusé' });
+      }
+
+      // Déterminer le nouvel ID de rôle
+      const newRoleId = isAdmin ? 3 : 1;
+
+      // Vérifier si le rôle est déjà correct
+      const currentRole = await db.one('SELECT id_role FROM user_role WHERE matricule = $1', [matricule]);
+
+      if (currentRole.id_role === newRoleId) {
+          return res.json({ success: true, message: 'Le rôle de l\'utilisateur est déjà correct.' });
+      }
+
+      // Mise à jour du rôle de l'utilisateur dans la base de données
+      await db.none('UPDATE user_role SET id_role = $1 WHERE matricule = $2', [newRoleId, matricule]);
+
+      res.json({ success: true, message: 'Le rôle de l\'utilisateur a été mis à jour avec succès.' });
+  } catch (error) {
+      console.error('Erreur lors de la mise à jour du rôle:', error);
+      if (error.message === 'Invalid token') {
+          res.status(401).json({ success: false, message: 'Token non valide' });
+      } else {
+          res.status(500).json({ success: false, message: 'Erreur interne du serveur' });
+      }
+  }
+});
+
+app.post('/updateUserStatus', async (req, res) => {
+  const receivedToken = req.headers.token;
+
+  if (!receivedToken) {
+    return res.status(401).json({ success: false, message: 'Token non valide' });
+  }
+
+  try {
+    const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+    const { matricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+    const userRole = await db.one('SELECT id_role FROM user_role WHERE matricule = $1', [matricule]);
+
+    if (userRole.id_role !== 3) {
+      return res.status(403).json({ success: false, message: 'Accès refusé' });
+    }
+
+    const { matricule: userMatricule, status } = req.body;
+    const validStatuses = ['active', 'banned', 'inactive'];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Statut invalide' });
+    }
+
+    await db.none('UPDATE public.user SET status = $1 WHERE matricule = $2', [status, userMatricule]);
+
+    res.json({ success: true, message: 'Statut mis à jour avec succès' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ success: false, message: 'Erreur interne du serveur' });
+  }
+});
+
+app.post('/addPoints', async (req, res) => {
+  const receivedToken = req.headers.token; // Récupérer le token de l'en-tête
+  const { matricule, isAdding } = req.body; // points est maintenant un booléen
+
+  if (!receivedToken) {
+      return res.status(401).json({ success: false, message: 'Token non valide' });
+  }
+
+  if (typeof matricule !== 'string' || typeof isAdding !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'Paramètres invalides' });
+  }
+
+  try {
+      // Décryptage du token reçu
+      const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+
+      // Vérification si l'utilisateur est admin
+      const { matricule: adminMatricule } = await db.one('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+      const userRole = await db.one('SELECT id_role FROM user_role WHERE matricule = $1', [adminMatricule]);
+
+      if (userRole.id_role !== 3) { // Si l'utilisateur n'est pas admin
+          return res.status(403).json({ success: false, message: 'Accès refusé' });
+      }
+
+      // Récupération des points actuels de l'utilisateur
+      const user = await db.oneOrNone('SELECT points FROM user_data WHERE matricule = $1', [matricule]);
+
+      if (!user) {
+          return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+      }
+
+      // Calcul des nouveaux points
+      let newPoints = user.points + (isAdding ? 1 : -1);
+      newPoints = Math.max(newPoints, 0); // Assurer que les points ne descendent pas en dessous de 0
+
+      // Mise à jour des points dans la base de données
+      await db.none('UPDATE user_data SET points = $1 WHERE matricule = $2', [newPoints, matricule]);
+
+      res.json({ success: true, message: `Points mis à jour à ${newPoints}` });
+  } catch (error) {
+      console.error('Error:', error);
+      if (error.message === 'Invalid token') {
+          res.status(401).json({ success: false, message: 'Token non valide' });
+      } else {
+          res.status(500).json({ success: false, message: 'Erreur interne du serveur' });
+      }
+  }
+});
+
+app.post('/anonymise', async (req, res) => {
+  const receivedToken = req.headers.token;
+
+  if (!receivedToken) {
+      return res.status(401).json({ success: false, message: 'Token non valide' });
+  }
+
+  try {
+      // Décryptage du token reçu pour obtenir le matricule
+      const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+      const result = await db.query('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+
+      if (result[0].length === 0) {
+          return res.status(401).json({ success: false, message: 'Token non valide ou utilisateur non trouvé' });
+      }
+
+      const matricule = result[0].matricule;
+
+      // Anonymisation des données de l'utilisateur dans la table "user_data"
+      await db.query(`
+          UPDATE user_data
+          SET
+              nom = '',
+              prenom = '',
+              adresse = NULL,  -- Mise à NULL pour une colonne de type point
+              numero = NULL,   -- Mise à NULL pour une colonne de type integer
+              points = 0       -- Mise à 0 pour la colonne points
+          WHERE matricule = $1
+      `, [matricule]);
+
+      // Mise à jour du statut de l'utilisateur dans la table "public.user"
+      await db.query(`
+          UPDATE public."user"
+          SET status = 'inactive'
+          WHERE matricule = $1
+      `, [matricule]);
+
+      // Réponse de succès
+      res.json({ success: true, message: 'Données utilisateur anonymisées et statut mis à jour avec succès.' });
+  } catch (error) {
+      console.error('Erreur lors de l\'anonymisation:', error);
+      if (error.message === 'Invalid token') {
+          res.status(401).json({ success: false, message: 'Token non valide' });
+      } else {
+          res.status(500).json({ success: false, message: 'Erreur lors de l\'anonymisation des données utilisateur et de la mise à jour du statut.' });
+      }
+  }
+});
 
 
 module.exports = app;
