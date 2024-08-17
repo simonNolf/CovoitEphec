@@ -9,10 +9,10 @@ const EditProfil = () => {
     const [adresse, setAdresse] = useState('');
     const [numero, setNumero] = useState('');
     const [errors, setErrors] = useState({});
-    const navigate = useNavigate();
-    const apiUrl = process.env.REACT_APP_API_URL;
-    const location = useLocation();
     const [isDriver, setIsDriver] = useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
+    const apiUrl = process.env.REACT_APP_API_URL;
     const matricule = sessionStorage.getItem('matricule');
 
     useEffect(() => {
@@ -46,7 +46,7 @@ const EditProfil = () => {
             setAdresse(adresse || '');
             setNumero(numero || '');
         }
-    }, [location.state]);
+    }, [location.state, navigate]);
 
     const validateFields = () => {
         const errors = {};
@@ -77,8 +77,7 @@ const EditProfil = () => {
 
             if (data.length > 0) {
                 const { lat, lon } = data[0];
-                // Utilisation des coordonnées géographiques dans la suite du traitement
-
+                
                 // Envoi du reste des données avec les coordonnées géographiques
                 const responseUpdate = await fetch(`${apiUrl}/users/updateUser`, {
                     method: 'POST',
@@ -100,8 +99,10 @@ const EditProfil = () => {
 
                 const dataUpdate = await responseUpdate.json();
                 if (dataUpdate.success) {
-                    toast.success('Profil mis à jour avec succès.');
-                    navigate('/profil');
+                    toast.success('Profil mis à jour avec succès.'); // Afficher le toast
+                    setTimeout(() => {
+                        navigate('/profil'); // Redirection après le toast
+                    }, 1000); // Attendre un peu pour laisser le temps au toast de s'afficher
                 } else {
                     toast.error('Erreur lors de la mise à jour du profil.');
                 }
