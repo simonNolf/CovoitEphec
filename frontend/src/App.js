@@ -35,8 +35,9 @@ function App() {
         <footer style={{ position: 'fixed', bottom: 0, width: '100%', backgroundColor: '#f8f9fa' }}>
           <nav>
             <ul style={{ display: 'flex', justifyContent: 'space-around', listStyleType: 'none', padding: 0 }}>
+              <li><Link to='/login'>Se Connecter</Link></li>
               <li><Link to="/profil">Profil</Link></li>
-              <li><Link to="/logout">Logout</Link></li>
+              <li><Link to="/logout">Se Déconnecter</Link></li>
               <li><Link to="/covoiturage">Covoiturage</Link></li>
               <li><Link to="/mescovoit">Mes Covoiturages</Link></li>
             </ul>

@@ -82,6 +82,9 @@ const Profil = () => {
                 setUser(data.user);
                 setIsDriver(data.isDriver);
                 setIsAdmin(data.isAdmin);
+                if(data.isAdmin){
+                    setIsDriver(data.isAdmin)
+                }
                 if (data.user.adresse) {
                     const { x: longitude, y: latitude } = data.user.adresse;
                     if (!isNaN(latitude) && !isNaN(longitude)) {
@@ -445,7 +448,7 @@ const Profil = () => {
                     ) : (
                         <p>Chargement des informations...</p>
                     )}
-                    {isDriver || isAdmin && (
+                    {isDriver && (
                         <>
                             <h2>Mes voitures</h2>
                             <ul>

@@ -10,6 +10,7 @@ COPY . /app
 # Installation des dépendances et build de l'application
 RUN npm install && npm run build
 
+
 # Deuxième étape : création de l'image finale
 FROM httpd:alpine
 
