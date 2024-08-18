@@ -26,6 +26,7 @@ const Covoiturage = () => {
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
     const [driver, SetDriver] = useState(false)
+    console.log(userCars)
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -51,9 +52,13 @@ const Covoiturage = () => {
                 });
                 const data = await response.json();
                 if (data.success) {
-                    if (data.isDriver) {
+                    console.log(data)
+                    if (data.isDriver || data.isAdmin) {
                         SetDriver(true)
                         fetchUserCars();
+                    }
+                    if(!(data.isDriver)){
+                        SetDriver(false)
                     }
                     if (data.user.adresse) {
                         const latitude = parseFloat(data.user.adresse.y);
@@ -462,37 +467,39 @@ const Covoiturage = () => {
                         required 
                     />
                 </div>
-                <div>
-                    <label>Conducteur:</label>
-                    <input 
-                        type="checkbox" 
-                        id="isDriver" 
-                        name="isDriver"
-                        checked={isDriver} 
-                        onChange={handleDriverCheckboxChange} 
-                    />
-                    {displayCarDropdown && (
-                        <div>
-                            <label htmlFor="car">Sélectionnez votre voiture:</label>
-                            <select 
-                                id="car" 
-                                name="car" 
-                                value={selectedCar} 
-                                onChange={handleCarSelectionChange}
-                                required
-                            >
-                                <option value="">Sélectionnez une voiture</option>
-                                {userCars.map(car => (
-                                    <option key={car.id} value={car.id}>{car.name} - {car.places} places</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                </div>
+                {driver && (
+    <div>
+        <label>
+            <input
+                type="checkbox"
+                checked={isDriver}
+                onChange={(e) => setIsDriver(e.target.checked)}
+            />
+            Je suis conducteur
+        </label>
+        {isDriver && (
+            <div>
+                <label>Voiture :</label>
+                <select
+                    value={selectedCar}
+                    onChange={(e) => setSelectedCar(e.target.value)}
+                >
+                    <option value="">Sélectionner une voiture</option>
+                    {userCars.map((car) => (
+                        <option key={car.id} value={car.id}>
+                            {car.brand} {car.model}
+                        </option>
+                    ))}
+                </select>
+            </div>
+        )}
+    </div>
+)}
+
                 <button type="submit">Envoyer</button>
             </form>
 
-            {demandes.length > 0 && (
+            {driver && demandes.length > 0 && (
     <div>
         <h2>Demandes de covoiturage</h2>
         <table style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -512,6 +519,7 @@ const Covoiturage = () => {
         </table>
     </div>
 )}
+
 
 {propositions.length > 0 && (
     <div>

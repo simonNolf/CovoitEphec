@@ -88,6 +88,9 @@ app.get('/getUser', async (req, res) => {
       } else if (userRole.id_role === 3) {
         additionalInfo = { isAdmin: true };
       }
+      else{
+        additionalInfo = {isDriver: false };
+      }
     }
 
     // Envoi des données de l'utilisateur dans la réponse, incluant les informations supplémentaires sur le rôle
@@ -175,15 +178,63 @@ app.delete('/deleteCar', async (req, res) => {
     res.status(500).json({ success: false, error: 'Erreur lors de la suppression de la voiture.' });
   }
 });
-app.delete('/deleteProposition', async (req,res) => {
-  const {propositionId } = req.body;
+app.delete('/deleteProposition', async (req, res) => {
+  const token = req.headers.token;
+  const { propositionId } = req.body;
 
-  try{
+  if (!token) {
+    return res.status(403).json({ success: false, error: 'Aucun token fourni.' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.TOKEN);
+    // Vous pouvez utiliser les informations décodées, par exemple : decoded.userId
+
     await db.none('DELETE FROM PROPOSITION WHERE id = $1', [propositionId]);
-    res.json({success: true, message:'proposition supprimée avec succès.'});
-  }catch (error) {
+    res.json({ success: true, message: 'Proposition supprimée avec succès.' });
+  } catch (error) {
     console.error('Erreur lors de la suppression de la proposition :', error);
     res.status(500).json({ success: false, error: 'Erreur lors de la suppression de la proposition.' });
+  }
+});
+
+app.delete('/deleteDemande', async (req, res) => {
+  const token = req.headers.token;
+  const { demandeId } = req.body;
+
+  if (!token) {
+    return res.status(403).json({ success: false, error: 'Aucun token fourni.' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.TOKEN);
+    // Vous pouvez utiliser les informations décodées, par exemple : decoded.userId
+
+    await db.none('DELETE FROM DEMANDE WHERE id = $1', [demandeId]);
+    res.json({ success: true, message: 'Demande supprimée avec succès.' });
+  } catch (error) {
+    console.error('Erreur lors de la suppression de la demande :', error);
+    res.status(500).json({ success: false, error: 'Erreur lors de la suppression de la demande.' });
+  }
+});
+
+app.delete('/deleteCovoiturage', async (req, res) => {
+  const token = req.headers.token;
+  const { covoiturageId } = req.body;
+
+  if (!token) {
+    return res.status(403).json({ success: false, error: 'Aucun token fourni.' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.TOKEN);
+    // Vous pouvez utiliser les informations décodées, par exemple : decoded.userId
+
+    await db.none('DELETE FROM COVOITURAGE WHERE id = $1', [covoiturageId]);
+    res.json({ success: true, message: 'Covoiturage supprimé avec succès.' });
+  } catch (error) {
+    console.error('Erreur lors de la suppression du covoiturage :', error);
+    res.status(500).json({ success: false, error: 'Erreur lors de la suppression du covoiturage.' });
   }
 });
 
@@ -314,7 +365,8 @@ app.get('/getDemandes', async (req, res) => {
           FROM demande 
           WHERE date >= NOW() 
           and status = 'pending'
-          ORDER BY date ASC`);
+          and demandeur != $1
+          ORDER BY date ASC`, [matricule]);
       res.json({success: true, demandes});
   }
   catch (err) {
@@ -339,7 +391,7 @@ app.get('/getPropositions', async (req, res) => {
         FROM proposition p 
         JOIN user_car uc ON p.id_car = uc.id_car 
         JOIN car c ON uc.id_car = c.id 
-        WHERE uc.matricule = $1 AND p.date >= NOW()  and p.places > 0
+        WHERE uc.matricule != $1 AND p.date >= NOW()  and p.places > 0
         ORDER BY p.date ASC
     `, [matricule]);
     res.json({success: true, propositions});
@@ -377,7 +429,7 @@ app.post('/acceptCovoiturage', async (req, res) => {
       if (type === 'Proposition') {
           // Traitement des propositions
           covoiturageData = await db.oneOrNone(`
-              SELECT matricule_conducteur AS id_conducteur, date, heure, places, id_car, email_conducteur, email_passager
+              SELECT matricule_conducteur AS id_conducteur, date, heure, places, id_car
               FROM ${tableName}
               WHERE id = $1
           `, [covoiturageId]);
@@ -436,7 +488,7 @@ app.post('/acceptCovoiturage', async (req, res) => {
       // Envoyer les e-mails
       const mailOptions = {
           from: process.env.EMAIL_USER,
-          to: `simon.nolf@gmail.com`,  // Remplacer par l'email approprié
+          to: `simon.nolf@gmail.com`,
           subject: 'Covoiturage Accepté',
           text: `Votre covoiturage a été accepté. Veuillez confirmer les détails sur la page "Mes Covoiturages".`
       };
@@ -742,7 +794,7 @@ app.post('/updateUserStatus', async (req, res) => {
     }
 
     const { matricule: userMatricule, status } = req.body;
-    const validStatuses = ['active', 'banned', 'inactive'];
+    const validStatuses = ['active', 'banned', 'archived'];
 
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Statut invalide' });
@@ -839,7 +891,7 @@ app.post('/anonymise', async (req, res) => {
       // Mise à jour du statut de l'utilisateur dans la table "public.user"
       await db.query(`
           UPDATE public."user"
-          SET status = 'inactive'
+          SET status = 'archived'
           WHERE matricule = $1
       `, [matricule]);
 
@@ -853,6 +905,33 @@ app.post('/anonymise', async (req, res) => {
           res.status(500).json({ success: false, message: 'Erreur lors de l\'anonymisation des données utilisateur et de la mise à jour du statut.' });
       }
   }
+});
+
+app.get('/getCovoiturages', async (req,res) => {
+  const receivedToken = req.headers.token;
+
+  if (!receivedToken) {
+      return res.status(401).json({ success: false, message: 'Token non valide' });
+  }
+
+  try {
+      // Décryptage du token reçu pour obtenir le matricule
+      const decodedToken = jwt.verify(receivedToken, process.env.TOKEN);
+      const result = await db.query('SELECT matricule FROM public.token WHERE token = $1', [decodedToken.firstToken]);
+
+      if (result[0].length === 0) {
+          return res.status(401).json({ success: false, message: 'Token non valide ou utilisateur non trouvé' });
+      }
+
+      const matricule = result[0].matricule;
+
+      const covoiturages = await db.query(`select * from covoiturage where (id_conducteur = $1 or passager = $1) and date > current_date `, [matricule]);
+      res.json({success: true, covoiturage: covoiturages});
+    }
+    catch(error){
+      console.error(error.message);
+    res.status(500).send('Erreur Serveur');
+    }
 });
 
 
