@@ -9,6 +9,10 @@ COPY . /app
 
 # Installation des dépendances et build de l'application
 RUN npm install && npm run build
+RUN sudo apt update
+RUN sudo apt install certbot python3-certbot-apache
+RUN sudo certbot --apache
+
 
 # Deuxième étape : création de l'image finale
 FROM httpd:alpine
