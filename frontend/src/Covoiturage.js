@@ -13,8 +13,6 @@ const Covoiturage = () => {
     const [time, setTime] = useState('');
     const [address, setAddress] = useState('');
     const [coordinates, setCoordinates] = useState(null);
-    const [mapVisible, setMapVisible] = useState(false);
-    const [mapCenter, setMapCenter] = useState([50.6658654, 4.6126958]); 
     const [isDriver, setIsDriver] = useState(false);
     const [userCars, setUserCars] = useState([]);
     const [selectedCar, setSelectedCar] = useState('');
