@@ -25,6 +25,7 @@ COPY --from=builder /app/build /var/www/html/
 
 # Exposition du port 80
 EXPOSE 80
+EXPOSE 443
 
 # Commande pour démarrer Apache en mode premier plan
 CMD ["apachectl", "-D", "FOREGROUND"]
