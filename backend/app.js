@@ -7,7 +7,6 @@ const app = express();
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-
 const transporter = nodemailer.createTransport({
   service: 'Gmail',
   host: "smtp.gmail.com",
@@ -18,8 +17,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.MDP, // Votre mot de passe Gmail
   },
 });
-
-
 
 app.use(cors());
 app.use(bodyParser.json()); 
