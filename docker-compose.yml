@@ -44,7 +44,7 @@ services:
     env_file:
       - ./frontend/.env
     ports:
-      - "443:443"
+      - "8070:80"
     networks:
       - my_network
 

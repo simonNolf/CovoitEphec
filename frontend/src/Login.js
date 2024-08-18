@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 const LoginComponent = () => {
   const [matricule, setMatricule] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const apiUrl = process.env.REACT_APP_API_URL;

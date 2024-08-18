@@ -24,6 +24,7 @@ const MesCovoiturages = () => {
     const [todayCovoiturages, setTodayCovoiturages] = useState([]);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [details, setDetails] = useState(null);
+    const [userLocation, setUserLocation] = useState(null);
     const [addresses, setAddresses] = useState({});
     const navigate = useNavigate();
     const token = sessionStorage.getItem('token');
