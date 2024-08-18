@@ -20,7 +20,8 @@ const Profil = () => {
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
     const navigate = useNavigate();
-    console.log(user)
+    const [covoiturages, setCovoiturages] = useState([]);
+
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -36,8 +37,36 @@ const Profil = () => {
             fetchUserCars();
             fetchPropositions();
             fetchDemandes();
+            fetchCovoiturages();
         }
     }, [token, matricule, navigate]);
+
+    const fetchCovoiturages = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/getCovoiturages`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                console.log(data)
+
+                const today = new Date().toISOString().split('T')[0];
+                const covoituragesFiltered = data.covoiturage.filter(covoiturage => covoiturage.date >= today);
+
+    
+                setCovoiturages(covoituragesFiltered);
+            } else {
+                console.error('Erreur:', data.message);
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+        }
+    };
+    
 
     const fetchUserData = async () => {
         try {
@@ -210,6 +239,29 @@ const Profil = () => {
         } catch (error) {
             console.error('Erreur lors de la suppression de la demande:', error);
             toast.error('Erreur lors de la suppression de la demande.');
+        }
+    };
+
+    const deleteCovoiturage = async (covoiturageId) => {
+        try {
+            const response = await fetch(`${apiUrl}/deleteCovoiturage`, {
+                method: 'DELETE',
+                headers: {
+                'Content-Type': 'application/json',
+                'token': token,
+            },
+            body: JSON.stringify({ covoiturageId }),
+        });
+         const data = await response.json();
+        if (data.success) {
+            toast.success('Covoiturage supprimée avec succès.');
+            fetchCovoiturages();
+        } else {
+            toast.error('Erreur lors de la suppression du Covoiturage.');
+        }
+        } catch (error) {
+            console.error('Erreur lors de la suppression du covoiturage:', error);
+            toast.error('Erreur lors de la suppression du covoiturage.');
         }
     };
 
@@ -393,7 +445,7 @@ const Profil = () => {
                     ) : (
                         <p>Chargement des informations...</p>
                     )}
-                    {isDriver && (
+                    {isDriver || isAdmin && (
                         <>
                             <h2>Mes voitures</h2>
                             <ul>
@@ -509,6 +561,22 @@ const Profil = () => {
                     ) : (
                         <p>Vous n'avez ni propositions ni demandes de covoiturage pour le moment. Consulter <a href='/mesCovoit'>vos covoiturages</a> pour voir si il faut que vous en confirmiez</p>
                     )}
+                    {covoiturages.length > 0 && (
+    <div>
+        <h2>Vos covoiturages à venir</h2>
+        <ul>
+            {covoiturages.map(covoiturage => (
+                <li key={covoiturage.id}>
+                    Date: {covoiturage.date.split('T')[0]}, Heure: {covoiturage.heure}, <br></br>Conducteur: {covoiturage.id_conducteur}
+                    {(new Date(covoiturage.date) > new Date(new Date().setDate(new Date().getDate() + 2))) && (
+                                                    <button onClick={() => deleteCovoiturage(covoiturage.id)}>🗑️</button>
+                                                )}
+                </li>
+            ))}
+        </ul>
+    </div>
+)}
+
                 </div>
             ) : (
                 <p>Chargement des informations...</p>
