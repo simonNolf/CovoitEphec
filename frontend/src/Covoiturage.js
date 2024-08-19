@@ -27,6 +27,7 @@ const Covoiturage = () => {
     const apiUrl = process.env.REACT_APP_API_URL;
     const [driver, SetDriver] = useState(false)
     console.log(userCars)
+    console.log(driver)
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -57,7 +58,7 @@ const Covoiturage = () => {
                         SetDriver(true)
                         fetchUserCars();
                     }
-                    if(!(data.isDriver)){
+                    else{
                         SetDriver(false)
                     }
                     if (data.user.adresse) {
@@ -406,7 +407,6 @@ const Covoiturage = () => {
                     </div>
                 )}
     
-                {/* Afficher la liste déroulante des voitures si c'est une demande */}
                 {selectedCovoiturage.type === 'Demande' && (
                     <div>
                         <label>Choisissez une voiture:</label>
@@ -436,7 +436,7 @@ const Covoiturage = () => {
                         borderRadius: '5px',
                         cursor: 'pointer',
                     }}
-                    disabled={selectedCovoiturage.type === 'Demande' && !selectedCar} // Désactiver le bouton si aucune voiture n'est sélectionnée pour une demande
+                    disabled={selectedCovoiturage.type === 'Demande' && !selectedCar}
                 >
                     Accepter
                 </button>
@@ -446,106 +446,157 @@ const Covoiturage = () => {
 
     return (
         <div>
-            <h1>Page de covoiturage</h1>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label htmlFor="date">Date:</label>
-                    <input type="date" id="date" name="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+            <h1 style={{ textAlign: 'center' }}>Page de covoiturage</h1>
+            <form onSubmit={handleSubmit} style={{ maxWidth: '600px', margin: '0 auto' }}>
+                <div style={{ marginBottom: '15px' }}>
+                    <label htmlFor="date" style={{ display: 'block', marginBottom: '5px' }}>Date:</label>
+                    <input
+                        type="date"
+                        id="date"
+                        name="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        required
+                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    />
                 </div>
-                <div>
-                    <label htmlFor="time">Heure:</label>
-                    <input type="time" id="time" name="time" value={time} onChange={(e) => setTime(e.target.value)} required />
+                <div style={{ marginBottom: '15px' }}>
+                    <label htmlFor="time" style={{ display: 'block', marginBottom: '5px' }}>Heure:</label>
+                    <input
+                        type="time"
+                        id="time"
+                        name="time"
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        required
+                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    />
                 </div>
-                <div>
-                    <label htmlFor="address">Adresse:</label>
-                    <input 
-                        type="text" 
-                        id="address" 
-                        name="address" 
-                        value={address} 
-                        onChange={handleAddressChange} 
-                        required 
+                <div style={{ marginBottom: '15px' }}>
+                    <label htmlFor="address" style={{ display: 'block', marginBottom: '5px' }}>Adresse:</label>
+                    <input
+                        type="text"
+                        id="address"
+                        name="address"
+                        value={address}
+                        onChange={handleAddressChange}
+                        required
+                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
                 </div>
                 {driver && (
-    <div>
-        <label>
-            <input
-                type="checkbox"
-                checked={isDriver}
-                onChange={(e) => setIsDriver(e.target.checked)}
-            />
-            Je suis conducteur
-        </label>
-        {isDriver && (
-            <div>
-                <label>Voiture :</label>
-                <select
-                    value={selectedCar}
-                    onChange={(e) => setSelectedCar(e.target.value)}
+                    <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center' }}>
+                            <input
+                                type="checkbox"
+                                checked={isDriver}
+                                onChange={handleDriverCheckboxChange}
+                                style={{ marginRight: '10px' }}
+                            />
+                            Je suis conducteur
+                        </label>
+                        {isDriver && (
+                            <div style={{ marginTop: '10px' }}>
+                                <label>Voiture :</label>
+                                <select
+                                    value={selectedCar}
+                                    onChange={handleCarSelectionChange}
+                                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                                >
+                                    <option value="">Sélectionner une voiture</option>
+                                    {userCars.map((car) => (
+                                        <option key={car.id} value={car.id}>
+                                            {car.name} ({car.places} places)
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
+                )}
+                <button
+                    type="submit"
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#4CAF50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        width: '100%',
+                        marginTop: '20px'
+                    }}
                 >
-                    <option value="">Sélectionner une voiture</option>
-                    {userCars.map((car) => (
-                        <option key={car.id} value={car.id}>
-                            {car.brand} {car.model}
-                        </option>
-                    ))}
-                </select>
-            </div>
-        )}
-    </div>
-)}
-
-                <button type="submit">Envoyer</button>
+                    Envoyer
+                </button>
             </form>
-
+    
             {driver && demandes.length > 0 && (
-    <div>
-        <h2>Demandes de covoiturage</h2>
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <tbody>
-                {demandes.map((demande) => (
-                    <tr key={demande.id} style={{ borderBottom: '1px solid #ccc' }}>
-                        <td>Date : {demande.date.split('T')[0]}</td>
-                        <td>Heure : {demande.heure}</td>
-                        <td>
-                            <button onClick={() => handleCovoiturageClick(demande, 'Demande')}>
-                                Voir les détails
-                            </button>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    </div>
-)}
-
-
-{propositions.length > 0 && (
-    <div>
-        <h2>Propositions de covoiturage</h2>
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-            <tbody>
-                {propositions.map((proposition) => (
-                    <tr key={proposition.id} style={{ borderBottom: '1px solid #ccc' }}>
-                        <td>Date : {proposition.date.split('T')[0]}</td>
-                        <td>Heure : {proposition.heure}</td>
-                        <td>
-                            <button onClick={() => handleCovoiturageClick(proposition, 'Proposition')}>
-                                Voir les détails
-                            </button>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    </div>
-)}
-
-
+                <div style={{ marginTop: '30px' }}>
+                    <h2>Demandes de covoiturage</h2>
+                    <table style={{ borderCollapse: 'collapse', width: '100%', marginBottom: '20px' }}>
+                        <tbody>
+                            {demandes.map((demande) => (
+                                <tr key={demande.id} style={{ borderBottom: '1px solid #ccc' }}>
+                                    <td style={{ padding: '10px' }}>Date : {demande.date.split('T')[0]}</td>
+                                    <td style={{ padding: '10px' }}>Heure : {demande.heure}</td>
+                                    <td style={{ padding: '10px' }}>
+                                        <button
+                                            onClick={() => handleCovoiturageClick(demande, 'Demande')}
+                                            style={{
+                                                backgroundColor: '#007BFF',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                padding: '5px 10px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Voir les détails
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+    
+            {propositions.length > 0 && (
+                <div style={{ marginTop: '30px' }}>
+                    <h2>Propositions de covoiturage</h2>
+                    <table style={{ borderCollapse: 'collapse', width: '100%', marginBottom: '20px' }}>
+                        <tbody>
+                            {propositions.map((proposition) => (
+                                <tr key={proposition.id} style={{ borderBottom: '1px solid #ccc' }}>
+                                    <td style={{ padding: '10px' }}>Date : {proposition.date.split('T')[0]}</td>
+                                    <td style={{ padding: '10px' }}>Heure : {proposition.heure}</td>
+                                    <td style={{ padding: '10px' }}>
+                                        <button
+                                            onClick={() => handleCovoiturageClick(proposition, 'Proposition')}
+                                            style={{
+                                                backgroundColor: '#007BFF',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                padding: '5px 10px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Voir les détails
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+    
             {renderCovoiturageDetails()}
         </div>
     );
+    
 };
 
 export default Covoiturage;
