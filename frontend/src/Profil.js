@@ -359,7 +359,7 @@ const Profil = () => {
                     <div style={{ marginBottom: '20px' }}>
                         <strong>Nom:</strong> {user.nom} <br />
                         <strong>Prénom:</strong> {user.prenom} <br />
-                        <strong>Email:</strong> {user.email} <br />
+                        <strong>Matricule:</strong> {user.matricule} <br />
                         <strong>Adresse:</strong> {decodedAddress}
                     </div>
                     <button
@@ -421,7 +421,7 @@ const Profil = () => {
                                 {propositions.map((proposition) => (
                                     <li key={proposition._id} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
                                         <strong>{proposition.title}</strong> <br />
-                                        <strong>Date:</strong> {proposition.date} <br />
+                                        <strong>Date:</strong> {proposition.date.split('T')[0]} <br />
                                         <strong>Adresse:</strong> {proposition.adresse}
                                     </li>
                                 ))}
@@ -435,7 +435,7 @@ const Profil = () => {
                             {demandes.map((demande) => (
                                 <li key={demande._id} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
                                     <strong>{demande.title}</strong> <br />
-                                    <strong>Date:</strong> {demande.date} <br />
+                                    <strong>Date:</strong> {demande.date.split('T')[0]} <br />
                                     <strong>Adresse:</strong> {demande.adresse} <br />
                                     <button
                                         onClick={() => deleteDemande(demande._id)}
@@ -454,7 +454,7 @@ const Profil = () => {
                             {covoiturages.map((covoiturage) => (
                                 <li key={covoiturage._id} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
                                     <strong>{covoiturage.title}</strong> <br />
-                                    <strong>Date:</strong> {covoiturage.date} <br />
+                                    <strong>Date:</strong> {covoiturage.date.split('T')[0]} <br />
                                     <strong>Adresse:</strong> {covoiturage.adresse} <br />
                                     <button
                                         onClick={() => deleteCovoiturage(covoiturage._id)}

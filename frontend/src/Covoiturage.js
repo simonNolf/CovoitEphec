@@ -26,8 +26,6 @@ const Covoiturage = () => {
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
     const [driver, SetDriver] = useState(false)
-    console.log(userCars)
-    console.log(driver)
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -53,7 +51,6 @@ const Covoiturage = () => {
                 });
                 const data = await response.json();
                 if (data.success) {
-                    console.log(data)
                     if (data.isDriver || data.isAdmin) {
                         SetDriver(true)
                         fetchUserCars();
@@ -385,7 +382,6 @@ const Covoiturage = () => {
                 <h2>Détails du covoiturage</h2>
                 <p>Date: {selectedCovoiturage.date.split('T')[0]}</p>
                 <p>Heure: {selectedCovoiturage.heure}</p>
-                <p>Adresse: {selectedCovoiturage.decodedAddress || 'Adresse non disponible'}</p>
     
                 {selectedCovoiturage.type === 'Proposition' && (
                     <p>Places restantes: {selectedCovoiturage.placesRestantes}</p>

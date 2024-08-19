@@ -17,7 +17,7 @@ import ProtectedRoute from './RoutrProtegees'; // Assurez-vous d'importer le com
 function App() {
   return (
     <Router>
-      <div style={{ paddingBottom: '50px' }}>
+      <div style={{ paddingBottom: '60px', minHeight: '100vh', backgroundColor: '#f0f0f5' }}>
         <Routes>
           <Route path="/" element={<Accueil />} />
           <Route path="/profil" element={<ProtectedRoute><Profil /></ProtectedRoute>} />
@@ -28,23 +28,39 @@ function App() {
           <Route path="/covoiturage" element={<ProtectedRoute><Covoiturage /></ProtectedRoute>} />
           <Route path="/logout" element={<Logout />} />
           <Route path="/mescovoit" element={<ProtectedRoute><MesCovoiturages /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
-          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>}/>
         </Routes>
 
-        <footer style={{ position: 'fixed', bottom: 0, width: '100%', backgroundColor: '#f8f9fa' }}>
+        <footer style={{
+          position: 'fixed',
+          bottom: 0,
+          width: '100%',
+          backgroundColor: '#343a40',
+          color: 'white',
+          textAlign: 'center',
+          padding: '10px 0',
+          boxShadow: '0px -2px 5px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000 // Ensures the footer is in the foreground
+        }}>
           <nav>
-            <ul style={{ display: 'flex', justifyContent: 'space-around', listStyleType: 'none', padding: 0 }}>
-              <li><Link to='/login'>Se Connecter</Link></li>
-              <li><Link to="/profil">Profil</Link></li>
-              <li><Link to="/logout">Se Déconnecter</Link></li>
-              <li><Link to="/covoiturage">Covoiturage</Link></li>
-              <li><Link to="/mescovoit">Mes Covoiturages</Link></li>
+            <ul style={{
+              display: 'flex',
+              justifyContent: 'space-around',
+              listStyleType: 'none',
+              margin: 0,
+              padding: 0
+            }}>
+              <li><Link to='/login' style={{ color: 'white', textDecoration: 'none' }}>Se connecter</Link></li>
+              <li><Link to="/profil" style={{ color: 'white', textDecoration: 'none' }}>Profil</Link></li>
+              <li><Link to="/logout" style={{ color: 'white', textDecoration: 'none' }}>Se déconnecter</Link></li>
+              <li><Link to="/covoiturage" style={{ color: 'white', textDecoration: 'none' }}>Covoiturage</Link></li>
+              <li><Link to="/mescovoit" style={{ color: 'white', textDecoration: 'none' }}>Mes covoiturages</Link></li>
             </ul>
           </nav>
         </footer>
-        <ToastContainer />
 
+        <ToastContainer />
       </div>
     </Router>
   );

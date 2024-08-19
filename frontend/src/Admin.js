@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, navigate } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -19,17 +19,14 @@ const Admin = () => {
         const currentDate = new Date();
 
         if (currentDate >= expirationDate) {
-            console.log("Token expired!");
             onTokenExpired();
         } else {
-            console.log("Token is still valid.");
             setTimeout(() => checkTokenExpiration(expirationTimestamp), 1000);
         }
     }
 
     function onTokenExpired() {
-        console.log("Token expired, redirecting to /logout.");
-        window.location.href = "/logout";
+        navigate = "/logout";
     }
 
     checkTokenExpiration(expirationToken);

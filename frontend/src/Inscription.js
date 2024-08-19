@@ -69,7 +69,6 @@ const InscriptionContainer = () => {
                 toast.error('Échec de l\'inscription.');
             }
         } catch (error) {
-            console.error('Erreur lors de l\'inscription :', error);
             toast.error('Erreur lors de l\'inscription.');
         } finally {
             setLoading(false);
@@ -79,15 +78,29 @@ const InscriptionContainer = () => {
     return (
         <>
             <ToastContainer />
-            {loading && <div className="loading">Enregistrement en cours...</div>}
-            <form className="centered-container" onSubmit={handleSubmit}>
+            {loading && <div style={{ textAlign: 'center', margin: '20px', fontSize: '18px', color: 'blue' }}>Enregistrement en cours...</div>}
+            <form 
+                style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '100vh', 
+                    backgroundColor: '#f7f7f7', 
+                    padding: '20px', 
+                    borderRadius: '8px', 
+                    boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)' 
+                }} 
+                onSubmit={handleSubmit}
+            >
                 {matricule && (
-                    <div>
+                    <div style={{ marginBottom: '10px', fontSize: '16px' }}>
                         <label>Matricule : {matricule}</label>
                     </div>
                 )}
-                <div>
+                <div style={{ marginBottom: '10px' }}>
                     <input
+                        style={{ padding: '10px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc', width: '300px' }}
                         placeholder='Votre mot de passe'
                         value={password}
                         minLength={8}
@@ -95,8 +108,9 @@ const InscriptionContainer = () => {
                         onChange={(e) => setPassword(e.target.value)}
                     />
                 </div>
-                <div>
+                <div style={{ marginBottom: '20px' }}>
                     <input
+                        style={{ padding: '10px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc', width: '300px' }}
                         placeholder='Confirmer le mot de passe'
                         value={confirmPassword}
                         minLength={8}
@@ -104,7 +118,18 @@ const InscriptionContainer = () => {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                     />
                 </div>
-                <button type='submit'>
+                <button 
+                    type='submit'
+                    style={{ 
+                        padding: '10px 20px', 
+                        fontSize: '16px', 
+                        backgroundColor: '#4CAF50', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '4px', 
+                        cursor: 'pointer' 
+                    }}
+                >
                     S'inscrire
                 </button>
             </form>
