@@ -33,7 +33,6 @@ app.use('/users', usersRoutes);
 const options = {
   key: fs.readFileSync('/etc/letsencrypt/live/covoitephec.site/privkey.pem'),
   cert: fs.readFileSync('/etc/letsencrypt/live/covoitephec.site/fullchain.pem'),
-  ca: fs.readFileSync('/etc/letsencrypt/live/covoitephec.site/chain.pem')
 };
 
 // Configurer le serveur HTTPS
