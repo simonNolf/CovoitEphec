@@ -296,10 +296,10 @@ const Profil = () => {
         }
     };
     const handleEditProfile = () => {
-        window.location.href = '/editProfil'; // Redirection vers la page d'édition de profil
+        navigate('/editProfil'); // Redirection vers la page d'édition de profil
     };
     const handleAdminPage = () => {
-        window.location.href = '/admin'; // Redirection vers la page admin
+        navigate('/admin'); // Redirection vers la page admin
     };
     const handleAnonymize = async () => {
         try {
@@ -313,7 +313,7 @@ const Profil = () => {
             const data = await response.json();
             if (data.success) {
                 toast.success('Profil anonymisé avec succès.');
-                window.location.href = '/login'; // Redirection vers la page de connexion
+                navigate('/login'); // Redirection vers la page de connexion
             } else {
                 toast.error('Erreur lors de l\'anonymisation du profil.');
             }

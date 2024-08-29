@@ -1,4 +1,5 @@
-import React, { useEffect, useState, navigate } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -13,6 +14,7 @@ const Admin = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const expirationToken = sessionStorage.getItem('tokenExpiration');
+    const navigate = useNavigate();
 
     function checkTokenExpiration(expirationTimestamp) {
         const expirationDate = new Date(expirationTimestamp);
