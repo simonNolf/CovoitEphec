@@ -16,12 +16,11 @@ const Profil = () => {
     const [currentCar, setCurrentCar] = useState(null);
     const [propositions, setPropositions] = useState([]);
     const [demandes, setDemandes] = useState([]);
+    const [covoiturages, setCovoiturages] = useState([]);
     const matricule = sessionStorage.getItem('matricule');
     const token = sessionStorage.getItem('token');
     const apiUrl = process.env.REACT_APP_API_URL;
     const navigate = useNavigate();
-    const [covoiturages, setCovoiturages] = useState([]);
-
 
     useEffect(() => {
         const handleTokenExpiration = () => {
@@ -52,12 +51,8 @@ const Profil = () => {
             });
             const data = await response.json();
             if (data.success) {
-                console.log(data)
-
                 const today = new Date().toISOString().split('T')[0];
                 const covoituragesFiltered = data.covoiturage.filter(covoiturage => covoiturage.date >= today);
-
-    
                 setCovoiturages(covoituragesFiltered);
             } else {
                 console.error('Erreur:', data.message);
@@ -66,7 +61,6 @@ const Profil = () => {
             console.error('Erreur:', error);
         }
     };
-    
 
     const fetchUserData = async () => {
         try {
@@ -82,6 +76,9 @@ const Profil = () => {
                 setUser(data.user);
                 setIsDriver(data.isDriver);
                 setIsAdmin(data.isAdmin);
+                if(data.isAdmin){
+                    setIsDriver(data.isAdmin)
+                }
                 if (data.user.adresse) {
                     const { x: longitude, y: latitude } = data.user.adresse;
                     if (!isNaN(latitude) && !isNaN(longitude)) {
@@ -148,8 +145,7 @@ const Profil = () => {
             if (data.success) {
                 const today = new Date().toISOString().split('T')[0];
                 const propositionsFiltered = data.propositions.filter(proposition => proposition.date >= today);
-    
-                // Décodage des adresses des propositions
+
                 for (const proposition of propositionsFiltered) {
                     const { x, y } = proposition.adresse;
                     try {
@@ -167,7 +163,7 @@ const Profil = () => {
                         proposition.adresse = 'Erreur lors du décodage de l\'adresse';
                     }
                 }
-    
+
                 setPropositions(propositionsFiltered);
             } else {
                 console.error('Erreur:', data.message);
@@ -191,7 +187,6 @@ const Profil = () => {
                 const today = new Date().toISOString().split('T')[0];
                 const demandesFiltered = data.demandes.filter(demande => demande.date >= today);
 
-                // Décodage des adresses des demandes
                 for (const demande of demandesFiltered) {
                     const { x, y } = demande.adresse;
                     try {
@@ -224,18 +219,18 @@ const Profil = () => {
             const response = await fetch(`${apiUrl}/deleteDemande`, {
                 method: 'DELETE',
                 headers: {
-                'Content-Type': 'application/json',
-                'token': token,
-            },
-            body: JSON.stringify({ demandeId }),
-        });
-         const data = await response.json();
-        if (data.success) {
-            toast.success('Demande supprimée avec succès.');
-            fetchDemandes();
-        } else {
-            toast.error('Erreur lors de la suppression de la demande.');
-        }
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+                body: JSON.stringify({ demandeId }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                toast.success('Demande supprimée avec succès.');
+                fetchDemandes();
+            } else {
+                toast.error('Erreur lors de la suppression de la demande.');
+            }
         } catch (error) {
             console.error('Erreur lors de la suppression de la demande:', error);
             toast.error('Erreur lors de la suppression de la demande.');
@@ -247,73 +242,35 @@ const Profil = () => {
             const response = await fetch(`${apiUrl}/deleteCovoiturage`, {
                 method: 'DELETE',
                 headers: {
-                'Content-Type': 'application/json',
-                'token': token,
-            },
-            body: JSON.stringify({ covoiturageId }),
-        });
-         const data = await response.json();
-        if (data.success) {
-            toast.success('Covoiturage supprimée avec succès.');
-            fetchCovoiturages();
-        } else {
-            toast.error('Erreur lors de la suppression du Covoiturage.');
-        }
-        } catch (error) {
-            console.error('Erreur lors de la suppression du covoiturage:', error);
-            toast.error('Erreur lors de la suppression du covoiturage.');
-        }
-    };
-
-    const deconnexion = () => {
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('matricule');
-        navigate('/login');
-    };
-
-    const anonymiserUserData = async () => {
-        try {
-            const response = await fetch(`${apiUrl}/anonymise`, {
-                method: 'POST',
-                headers: {
                     'Content-Type': 'application/json',
                     'token': token,
                 },
+                body: JSON.stringify({ covoiturageId }),
             });
             const data = await response.json();
             if (data.success) {
-                toast.success('Données anonymisées avec succès.');
-                deconnexion(); // Log out user after anonymization
+                toast.success('Covoiturage supprimé avec succès.');
+                fetchCovoiturages();
             } else {
-                toast.error('Erreur lors de l\'anonymisation des données.');
+                toast.error('Erreur lors de la suppression du Covoiturage.');
             }
         } catch (error) {
-            console.error('Erreur lors de l\'anonymisation des données:', error);
-            toast.error('Erreur lors de l\'anonymisation des données.');
+            console.error('Erreur lors de la suppression du covoiturage:', error);
+            toast.error('Erreur lors de la suppression du Covoiturage.');
         }
     };
 
-    const openModal = () => {
+    const openModal = (car) => {
+        setCurrentCar(car);
         setModalIsOpen(true);
     };
 
     const closeModal = () => {
         setModalIsOpen(false);
-    };
-
-    const openEditModal = (car) => {
-        setCurrentCar(car);
-        setCarName(car.name);
-        setCarSeats(car.places);
-        setEditModalIsOpen(true);
-    };
-
-    const closeEditModal = () => {
         setEditModalIsOpen(false);
     };
 
-    const handleCarSubmit = async (event) => {
-        event.preventDefault();
+    const addCar = async () => {
         try {
             const response = await fetch(`${apiUrl}/addCar`, {
                 method: 'POST',
@@ -321,18 +278,15 @@ const Profil = () => {
                     'Content-Type': 'application/json',
                     'token': token,
                 },
-                body: JSON.stringify({
-                    carName: carName.trim(),
-                    carSeats: parseInt(carSeats, 10),
-                }),
+                body: JSON.stringify({ name: carName, seats: carSeats }),
             });
             const data = await response.json();
             if (data.success) {
                 toast.success('Voiture ajoutée avec succès.');
-                closeModal();
                 setCarName('');
                 setCarSeats('');
                 fetchUserCars();
+                closeModal();
             } else {
                 toast.error('Erreur lors de l\'ajout de la voiture.');
             }
@@ -341,29 +295,53 @@ const Profil = () => {
             toast.error('Erreur lors de l\'ajout de la voiture.');
         }
     };
-
-    const handleCarEdit = async (event) => {
-        event.preventDefault();
+    const handleEditProfile = () => {
+        navigate('/editProfil'); // Redirection vers la page d'édition de profil
+    };
+    const handleAdminPage = () => {
+        navigate('/admin'); // Redirection vers la page admin
+    };
+    const handleAnonymize = async () => {
+        try {
+            const response = await fetch(`${apiUrl}/anonymize`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'token': token,
+                },
+            });
+            const data = await response.json();
+            if (data.success) {
+                toast.success('Profil anonymisé avec succès.');
+                navigate('/login'); // Redirection vers la page de connexion
+            } else {
+                toast.error('Erreur lors de l\'anonymisation du profil.');
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'anonymisation du profil:', error);
+            toast.error('Erreur lors de l\'anonymisation du profil.');
+        }
+    };
+    
+    const editCar = async () => {
         try {
             const response = await fetch(`${apiUrl}/editCar`, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'token': token,
                 },
                 body: JSON.stringify({
-                    carId: currentCar.id,
-                    carName: carName.trim(),
-                    carSeats: parseInt(carSeats, 10),
+                    id: currentCar._id,
+                    name: carName || currentCar.name,
+                    seats: carSeats || currentCar.seats,
                 }),
             });
             const data = await response.json();
             if (data.success) {
                 toast.success('Voiture modifiée avec succès.');
-                closeEditModal();
-                setCarName('');
-                setCarSeats('');
                 fetchUserCars();
+                closeModal();
             } else {
                 toast.error('Erreur lors de la modification de la voiture.');
             }
@@ -373,215 +351,171 @@ const Profil = () => {
         }
     };
 
-    const deleteProposition = async(propositionId) => {
-        console.log(propositionId)
-        try {
-            const response = await fetch(`${apiUrl}/deleteProposition`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'token': token,
-                },
-                body: JSON.stringify({ propositionId }),
-            });
-            const data = await response.json();
-            if (data.success) {
-                toast.success('Proposition supprimée avec succès.');
-                fetchPropositions();
-            } else {
-                toast.error('Erreur lors de la suppression de la proposition.');
-            }
-        } catch (error) {
-            console.error('Erreur lors de la suppression de la proposition:', error);
-            toast.error('Erreur lors de la suppression de la proposition.');
-        }
-    };
-
-    const handleCarDelete = async (carId) => {
-        try {
-            const response = await fetch(`${apiUrl}/deleteCar`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'token': token,
-                },
-                body: JSON.stringify({ carId }),
-            });
-            const data = await response.json();
-            if (data.success) {
-                toast.success('Voiture supprimée avec succès.');
-                fetchUserCars();
-            } else {
-                toast.error('Erreur lors de la suppression de la voiture.');
-            }
-        } catch (error) {
-            console.error('Erreur lors de la suppression de la voiture:', error);
-            toast.error('Erreur lors de la suppression de la voiture.');
-        }
-    };
-
-    const allFieldsFilled = user?.nom && user?.prenom && decodedAddress;
-    if (allFieldsFilled) {
-        localStorage.setItem('adresse', decodedAddress);
-        localStorage.setItem('nom', user.nom);
-        localStorage.setItem('prenom', user.prenom);
-        localStorage.setItem('numero', user.numero);
-    }
-
     return (
-        <div>
-            <h1>Page de profil</h1>
-            {user ? (
+        <div style={{ padding: '20px' }}>
+            {user && (
                 <div>
-                    {allFieldsFilled ? (
-                        <>
-                            <p>Nom: {user.nom}</p>
-                            <p>Prénom: {user.prenom}</p>
-                            <p>Adresse: {decodedAddress}</p>
-                            <p>Numéro de téléphone: {user.numero}</p>
-                            <p>Nombre de points: {user.points}</p>
-                            <button onClick={anonymiserUserData}>Anonymiser</button> {/* Added anonymize button */}
-                        </>
-                    ) : (
-                        <p>Chargement des informations...</p>
-                    )}
-                    {isDriver || isAdmin && (
-                        <>
-                            <h2>Mes voitures</h2>
-                            <ul>
+                    <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>Profil</h1>
+                    <div style={{ marginBottom: '20px' }}>
+                        <strong>Nom:</strong> {user.nom} <br />
+                        <strong>Prénom:</strong> {user.prenom} <br />
+                        <strong>Matricule:</strong> {user.matricule} <br />
+                        <strong>Adresse:</strong> {decodedAddress}
+                    </div>
+                    <button
+    onClick={handleEditProfile}
+    style={{ padding: '10px 20px', marginBottom: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+>
+    Modifier Profil
+</button>
+
+{isAdmin && (
+    <>
+        <button
+            onClick={handleAdminPage}
+            style={{ padding: '10px 20px', marginBottom: '10px', marginLeft: '10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+        >
+            Page Admin
+        </button>
+        </>
+    )}
+        <button
+            onClick={handleAnonymize}
+            style={{ padding: '10px 20px', marginBottom: '10px', marginLeft: '10px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+        >
+            Anonymiser
+        </button>
+    
+
+
+
+                    {isDriver && (
+                        <div>
+                            <h2 style={{ fontSize: '20px', marginBottom: '10px' }}>Vos voitures</h2>
+                            <button
+                                onClick={() => setModalIsOpen(true)}
+                                style={{ padding: '10px 20px', marginBottom: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                            >
+                                Ajouter une voiture
+                            </button>
+                            <ul style={{ listStyleType: 'none', padding: '0' }}>
                                 {userCars.map((car) => (
-                                    <li key={car.id}>
-                                        {car.name} - {car.places} places
-                                        <button onClick={() => openEditModal(car)}>🖊️</button>
-                                        <button onClick={() => handleCarDelete(car.id)}>🗑️</button>
+                                    <li key={car._id} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                                        <strong>{car.name}</strong> ({car.places} places)
+                                        <button
+                                            onClick={() => openModal(car)}
+                                            style={{ padding: '5px 10px', marginLeft: '10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                                        >
+                                            Modifier
+                                        </button>
                                     </li>
                                 ))}
                             </ul>
-                            <button onClick={openModal}>Ajouter une voiture</button>
-                            <Modal
-                                isOpen={modalIsOpen}
-                                onRequestClose={closeModal}
-                                contentLabel="Ajouter une Voiture"
-                            >
-                                <h2>Ajouter une Voiture</h2>
-                                <form onSubmit={handleCarSubmit}>
-                                    <label>
-                                        Nom de la voiture:
-                                        <input
-                                            type="text"
-                                            value={carName}
-                                            onChange={(e) => setCarName(e.target.value)}
-                                            required
-                                        />
-                                    </label>
-                                    <label>
-                                        Nombre de places:
-                                        <input
-                                            type="number"
-                                            value={carSeats}
-                                            onChange={(e) => setCarSeats(e.target.value)}
-                                            required
-                                        />
-                                    </label>
-                                    <button type="submit">Ajouter</button>
-                                    <button type="button" onClick={closeModal}>Annuler</button>
-                                </form>
-                            </Modal>
-                            <Modal
-                                isOpen={editModalIsOpen}
-                                onRequestClose={closeEditModal}
-                                contentLabel="Modifier une Voiture"
-                            >
-                                <h2>Modifier une Voiture</h2>
-                                <form onSubmit={handleCarEdit}>
-                                    <label>
-                                        Nom de la voiture:
-                                        <input
-                                            type="text"
-                                            value={carName}
-                                            onChange={(e) => setCarName(e.target.value)}
-                                            required
-                                        />
-                                    </label>
-                                    <label>
-                                        Nombre de places:
-                                        <input
-                                            type="number"
-                                            value={carSeats}
-                                            onChange={(e) => setCarSeats(e.target.value)}
-                                            required
-                                        />
-                                    </label>
-                                    <button type="submit">Modifier</button>
-                                    <button type="button" onClick={closeEditModal}>Annuler</button>
-                                </form>
-                            </Modal>
-                        </>
-                    )}
-                    {isAdmin && (
-                        <button onClick={() => navigate('/admin')}>Page Admin</button>
-                    )}
-                    <div style={{ marginTop: '20px' }}>
-                        <button onClick={() => navigate('/editProfil')}>Modifier le profil</button>
-                        <button onClick={deconnexion}>Déconnexion</button>
-                    </div>
-                    {(propositions.length > 0 || demandes.length > 0) ? (
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            {propositions.length > 0 && (
-                                <div style={{ flex: 1, marginRight: demandes.length > 0 ? '10px' : '0' }}>
-                                    <h2>Mes Propositions de Covoiturage</h2>
-                                    <ul>
-                                        {propositions.map(proposition => (
-                                            <li key={proposition.id}>
-                                                Date: {proposition.date.split('T')[0]}, Heure: {proposition.heure}, <br></br>Adresse: {proposition.adresse}, <br></br>Voiture: {proposition.car_name},  places : {proposition.places}
-                                                {(new Date(proposition.date) > new Date(new Date().setDate(new Date().getDate() + 2))) && (
-                                                    <button onClick={() => deleteProposition(proposition.id)}>🗑️</button>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                            {demandes.length > 0 && (
-                                <div style={{ flex: 1, marginLeft: propositions.length > 0 ? '10px' : '0' }}>
-                                    <h2>Mes Demandes de Covoiturage</h2>
-                                    <ul>
-                                        {demandes.map(demande => (
-                                            <li key={demande.id}>
-                                                Date: {demande.date.split('T')[0]}, Heure: {demande.heure}, <br></br>Adresse: {demande.adresse}
-                                                {(new Date(demande.date) > new Date(new Date().setDate(new Date().getDate() + 2))) && (
-                                                    <button onClick={() => deleteDemande(demande.id)}>🗑️</button>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
                         </div>
-                    ) : (
-                        <p>Vous n'avez ni propositions ni demandes de covoiturage pour le moment. Consulter <a href='/mesCovoit'>vos covoiturages</a> pour voir si il faut que vous en confirmiez</p>
                     )}
-                    {covoiturages.length > 0 && (
-    <div>
-        <h2>Vos covoiturages à venir</h2>
-        <ul>
-            {covoiturages.map(covoiturage => (
-                <li key={covoiturage.id}>
-                    Date: {covoiturage.date.split('T')[0]}, Heure: {covoiturage.heure}, <br></br>Conducteur: {covoiturage.id_conducteur}
-                    {(new Date(covoiturage.date) > new Date(new Date().setDate(new Date().getDate() + 2))) && (
-                                                    <button onClick={() => deleteCovoiturage(covoiturage.id)}>🗑️</button>
-                                                )}
-                </li>
-            ))}
-        </ul>
-    </div>
-)}
 
+                    {isDriver && (
+                        <div>
+                            <h2 style={{ fontSize: '20px', marginBottom: '10px' }}>Propositions</h2>
+                            <ul style={{ listStyleType: 'none', padding: '0' }}>
+                                {propositions.map((proposition) => (
+                                    <li key={proposition._id} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                                        <strong>{proposition.title}</strong> <br />
+                                        <strong>Date:</strong> {proposition.date.split('T')[0]} <br />
+                                        <strong>Adresse:</strong> {proposition.adresse}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    <div>
+                        <h2 style={{ fontSize: '20px', marginBottom: '10px' }}>Demandes</h2>
+                        <ul style={{ listStyleType: 'none', padding: '0' }}>
+                            {demandes.map((demande) => (
+                                <li key={demande._id} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                                    <strong>{demande.title}</strong> <br />
+                                    <strong>Date:</strong> {demande.date.split('T')[0]} <br />
+                                    <strong>Adresse:</strong> {demande.adresse} <br />
+                                    <button
+                                        onClick={() => deleteDemande(demande._id)}
+                                        style={{ padding: '5px 10px', marginTop: '10px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                                    >
+                                        Supprimer
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h2 style={{ fontSize: '20px', marginBottom: '10px' }}>Covoiturages</h2>
+                        <ul style={{ listStyleType: 'none', padding: '0' }}>
+                            {covoiturages.map((covoiturage) => (
+                                <li key={covoiturage._id} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}>
+                                    <strong>{covoiturage.title}</strong> <br />
+                                    <strong>Date:</strong> {covoiturage.date.split('T')[0]} <br />
+                                    <strong>Adresse:</strong> {covoiturage.adresse} <br />
+                                    <button
+                                        onClick={() => deleteCovoiturage(covoiturage._id)}
+                                        style={{ padding: '5px 10px', marginTop: '10px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                                    >
+                                        Supprimer
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <Modal
+                        isOpen={modalIsOpen}
+                        onRequestClose={closeModal}
+                        style={{
+                            content: {
+                                top: '50%',
+                                left: '50%',
+                                right: 'auto',
+                                bottom: 'auto',
+                                marginRight: '-50%',
+                                transform: 'translate(-50%, -50%)',
+                                padding: '20px',
+                                borderRadius: '10px',
+                                border: '1px solid #ccc',
+                            },
+                        }}
+                    >
+                        <h2>{currentCar ? 'Modifier la voiture' : 'Ajouter une voiture'}</h2>
+                        <input
+                            type="text"
+                            placeholder="Nom de la voiture"
+                            value={carName}
+                            onChange={(e) => setCarName(e.target.value)}
+                            style={{ display: 'block', marginBottom: '10px', padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
+                        />
+                        <input
+                            type="number"
+                            placeholder="Nombre de places"
+                            value={carSeats}
+                            onChange={(e) => setCarSeats(e.target.value)}
+                            style={{ display: 'block', marginBottom: '10px', padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
+                        />
+                        <button
+                            onClick={currentCar ? editCar : addCar}
+                            style={{ padding: '10px 20px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                        >
+                            {currentCar ? 'Modifier' : 'Ajouter'}
+                        </button>
+                        <button
+                            onClick={closeModal}
+                            style={{ padding: '10px 20px', marginLeft: '10px', backgroundColor: '#6c757d', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                        >
+                            Annuler
+                        </button>
+                    </Modal>
                 </div>
-            ) : (
-                <p>Chargement des informations...</p>
             )}
         </div>
     );
 };
+
 export default Profil;

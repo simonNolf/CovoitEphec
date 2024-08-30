@@ -69,13 +69,46 @@ const ConnexionContainer = () => {
     }
   }, [navigate]);
 
+  const formStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    padding: '20px',
+    boxSizing: 'border-box',
+    textAlign: 'center',
+  };
+
+  const inputStyle = {
+    fontSize: '1.5rem',
+    padding: '15px',
+    width: '100%',
+    maxWidth: '400px',
+    marginBottom: '15px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+  };
+
+  const buttonStyle = {
+    fontSize: '1.5rem',
+    padding: '15px',
+    width: '100%',
+    maxWidth: '400px',
+    cursor: 'pointer',
+    border: 'none',
+    borderRadius: '4px',
+    backgroundColor: '#007bff',
+    color: '#fff',
+  };
+
   return (
     <>
       <ToastContainer />
-      {loading && <div>Chargement...</div>}
-      <form className="centered-container" onSubmit={handleSubmit}>
+      {loading && <div style={{ textAlign: 'center', fontSize: '1.2rem' }}>Chargement...</div>}
+      <form style={formStyle} onSubmit={handleSubmit}>
         {matricule && (
-          <div>
+          <div style={{ marginBottom: '20px' }}>
             <label>Matricule: {matricule}</label>
           </div>
         )}
@@ -85,11 +118,12 @@ const ConnexionContainer = () => {
             id="password"
             value={password}
             minLength={8}
-            type='password'
+            type="password"
             onChange={(e) => setPassword(e.target.value)}
+            style={inputStyle}
           />
         </div>
-        <button type="submit">Se connecter</button>
+        <button type="submit" style={buttonStyle}>Se connecter</button>
       </form>
     </>
   );

@@ -12,8 +12,8 @@ describe('Login component', () => {
     );
   });
 
-  test('renders input field with placeholder "votre matricule"', () => {
-    const input = screen.getByPlaceholderText('votre matricule');
+  test('renders input field with placeholder "Votre matricule"', () => {
+    const input = screen.getByPlaceholderText('Votre matricule');
     expect(input).toBeInTheDocument();
   });
 

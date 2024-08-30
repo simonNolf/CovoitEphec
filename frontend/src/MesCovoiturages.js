@@ -24,6 +24,7 @@ const MesCovoiturages = () => {
     const [todayCovoiturages, setTodayCovoiturages] = useState([]);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [details, setDetails] = useState(null);
+    const [userLocation, setUserLocation] = useState(null);
     const [addresses, setAddresses] = useState({});
     const navigate = useNavigate();
     const token = sessionStorage.getItem('token');
@@ -171,7 +172,6 @@ const MesCovoiturages = () => {
             return;
         }
     
-        // Vérifier que les coordonnées du passager existent
         if (!passagerCoords || !passagerCoords.y || !passagerCoords.x) {
             toast.error('Les coordonnées du passager ne sont pas disponibles.');
             return;
@@ -189,11 +189,11 @@ const MesCovoiturages = () => {
                         'token': token
                     },
                     body: JSON.stringify({
-                        covoiturageId,  // ID du covoiturage
-                        passagerLatitude: passagerCoords.y,  // Latitude du passager
-                        passagerLongitude: passagerCoords.x, // Longitude du passager
-                        latitude,  // Latitude actuelle de l'utilisateur
-                        longitude  // Longitude actuelle de l'utilisateur
+                        covoiturageId,
+                        passagerLatitude: passagerCoords.y,
+                        passagerLongitude: passagerCoords.x,
+                        latitude,
+                        longitude
                     })
                 });
     
@@ -206,7 +206,6 @@ const MesCovoiturages = () => {
                         toast.error(data.message || 'Erreur lors de la vérification.');
                     }
                 } else {
-                    // Gérer les erreurs liées aux réponses non réussies (status code >= 400)
                     toast.error(data.message || 'Erreur de serveur. Veuillez réessayer.');
                 }
             } catch (error) {
@@ -218,89 +217,94 @@ const MesCovoiturages = () => {
             console.error('Erreur de géolocalisation:', error);
         });
     };
-    
-    
-    
-    return (
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <div style={{ flex: 1, marginRight: '20px' }}>
-                <h1>Mes Covoiturages</h1>
-                <Calendar
-                    onChange={handleDateChange}
-                    value={selectedDate}
-                    tileContent={({ date, view }) => {
-                        if (view === 'month') {
-                            const dateString = date.toISOString().split('T')[0];
-                            const covoiturage = covoiturages.find(covoit => {
-                                const covoitDateString = new Date(covoit.date).toISOString().split('T')[0];
-                                return covoitDateString === dateString;
-                            });
 
-                            if (covoiturage) {
-                                return (
-                                    <div
-                                        style={{
-                                            position: 'relative',
-                                            height: '100%',
-                                        }}
-                                    >
-                                        {covoiturage.status === 'pending' && (
-                                            <div
-                                                style={{
-                                                    backgroundColor: 'lightcoral',
-                                                    borderRadius: '50%',
-                                                    height: '10px',
-                                                    width: '10px',
-                                                    position: 'absolute',
-                                                    bottom: '5px',
-                                                    left: '50%',
-                                                    transform: 'translateX(-50%)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                }}
-                                            />
-                                        )}
-                                        {covoiturage.status === 'accepter' && (
-                                            <div
-                                                style={{
-                                                    backgroundColor: 'lightgreen',
-                                                    borderRadius: '50%',
-                                                    height: '10px',
-                                                    width: '10px',
-                                                    position: 'absolute',
-                                                    bottom: '5px',
-                                                    left: '50%',
-                                                    transform: 'translateX(-50%)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                }}
-                                            />
-                                        )}
-                                    </div>
-                                );
+    return (
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+            <div style={{ flex: 1, marginRight: '20px' }}>
+                <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>Mes Covoiturages</h1>
+                <div style={{ marginBottom: '20px' }}>
+                    <Calendar
+                        onChange={handleDateChange}
+                        value={selectedDate}
+                        tileContent={({ date, view }) => {
+                            if (view === 'month') {
+                                const dateString = date.toISOString().split('T')[0];
+                                const covoiturage = covoiturages.find(covoit => {
+                                    const covoitDateString = new Date(covoit.date).toISOString().split('T')[0];
+                                    return covoitDateString === dateString;
+                                });
+
+                                if (covoiturage) {
+                                    return (
+                                        <div
+                                            style={{
+                                                position: 'relative',
+                                                height: '100%',
+                                            }}
+                                        >
+                                            {covoiturage.status === 'pending' && (
+                                                <div
+                                                    style={{
+                                                        backgroundColor: 'lightcoral',
+                                                        borderRadius: '50%',
+                                                        height: '10px',
+                                                        width: '10px',
+                                                        position: 'absolute',
+                                                        bottom: '5px',
+                                                        left: '50%',
+                                                        transform: 'translateX(-50%)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}
+                                                />
+                                            )}
+                                            {covoiturage.status === 'accepter' && (
+                                                <div
+                                                    style={{
+                                                        backgroundColor: 'lightgreen',
+                                                        borderRadius: '50%',
+                                                        height: '10px',
+                                                        width: '10px',
+                                                        position: 'absolute',
+                                                        bottom: '5px',
+                                                        left: '50%',
+                                                        transform: 'translateX(-50%)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                }
                             }
-                        }
-                        return null;
-                    }}
-                />
+                            return null;
+                        }}
+                    />
+                </div>
                 {details ? (
-                    <div>
-                        <h2>Détails du Covoiturage</h2>
+                    <div style={{ padding: '20px', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)', backgroundColor: '#f9f9f9' }}>
+                        <h2 style={{ fontSize: '20px', marginBottom: '10px' }}>Détails du Covoiturage</h2>
                         <p><strong>Conducteur:</strong> {details.id_conducteur}</p>
                         <p><strong>Date:</strong> {new Date(details.date).toLocaleDateString()}</p>
                         <p><strong>Heure:</strong> {details.heure}</p>
                         <p><strong>Voiture:</strong> {details.car_name}</p>
                         <p><strong>Passager:</strong> {details.passager}</p>
                         {details.status === 'pending' && (
-                            <button onClick={confirmCovoiturage}>Confirmer</button>
+                            <button 
+                                onClick={confirmCovoiturage} 
+                                style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', padding: '10px 20px', cursor: 'pointer' }}
+                            >
+                                Confirmer
+                            </button>
                         )}
                         {(details.adresse_conducteur || details.adresse_passager) ? (
                             <MapContainer
                                 center={details.adresse_conducteur ? [details.adresse_conducteur.y, details.adresse_conducteur.x] : ephecCoordinates}
                                 zoom={13}
-                                style={{ height: '300px', width: '100%', marginTop: '20px' }}
+                                style={{ height: '300px', width: '100%', marginTop: '20px', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}
                             >
                                 <TileLayer
                                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -335,10 +339,10 @@ const MesCovoiturages = () => {
                 )}
             </div>
             <div style={{ flex: 1 }}>
-                <h2>Covoiturages du Jour</h2>
+                <h2 style={{ fontSize: '20px', marginBottom: '20px' }}>Covoiturages du Jour</h2>
                 {todayCovoiturages.length > 0 ? (
                     todayCovoiturages.map(covoit => (
-                        <div key={covoit.id} style={{ marginBottom: '20px' }}>
+                        <div key={covoit.id} style={{ marginBottom: '20px', padding: '20px', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)', backgroundColor: '#f9f9f9' }}>
                             <p><strong>Conducteur:</strong> {covoit.id_conducteur} <strong> numéro : </strong>0{covoit.numéro_conducteur}</p>
                             <p><strong>Date:</strong> {new Date(covoit.date).toLocaleDateString()}</p>
                             <p><strong>Heure:</strong> {covoit.heure}</p>
@@ -347,7 +351,7 @@ const MesCovoiturages = () => {
                                 <MapContainer
                                     center={covoit.adresse ? [covoit.adresse.y, covoit.adresse.x] : ephecCoordinates}
                                     zoom={13}
-                                    style={{ height: '200px', width: '100%', marginTop: '10px' }}
+                                    style={{ height: '200px', width: '100%', marginTop: '10px', borderRadius: '8px', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }}
                                 >
                                     <TileLayer
                                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -378,12 +382,10 @@ const MesCovoiturages = () => {
                             )}
                             <button 
                                 onClick={() => verification(covoit.id, covoit.adresse_passager)} 
-                                style={{ marginTop: '10px' }}
+                                style={{ marginTop: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', padding: '10px 20px', cursor: 'pointer' }}
                             >
                                 Je suis au point de rendez-vous
                             </button>
-
-
                         </div>
                     ))
                 ) : (

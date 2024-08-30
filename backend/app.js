@@ -3,36 +3,52 @@ const cors = require('cors');
 const db = require('./database');
 const bodyParser = require('body-parser');
 const usersRoutes = require('./usersRoutes.js');
-const app = express();
+const https = require('https'); // Importer le module HTTPS
+const fs = require('fs'); // Importer le module FS pour lire les fichiers
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
+const app = express();
 
+// Configuration de Nodemailer pour Gmail
 const transporter = nodemailer.createTransport({
   service: 'Gmail',
   host: "smtp.gmail.com",
   port: 465,
   secure: true,
   auth: {
-    user: process.env.MAIL, // Votre adresse e-mail Gmail
-    pass: process.env.MDP, // Votre mot de passe Gmail
+    user: process.env.MAIL,
+    pass: process.env.MDP,
   },
 });
 
-
-
+// Middlewares
 app.use(cors());
 app.use(bodyParser.json()); 
 
+// Routes
 app.use('/users', usersRoutes);
 
+// Charger les certificats SSL
+const options = {
+  key: fs.readFileSync('/etc/letsencrypt/live/covoitephec.site/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/covoitephec.site/fullchain.pem'),
+};
+
+// Configurer le serveur HTTPS
 const PORT = 3030;
-app.listen(PORT, () => {
-  console.log(`Serveur en cours d'exécution sur le port ${PORT}`);
+https.createServer(options, app).listen(PORT, () => {
+  console.log(`Serveur en cours d'exécution en HTTPS sur le port ${PORT}`);
 });
 
-// Route d'activation du compte
-const moment = require('moment');
+// Rediriger tout le trafic HTTP vers HTTPS
+const http = require('http');
+http.createServer((req, res) => {
+  res.writeHead(301, { "Location": `https://${req.headers.host}${req.url}` });
+  res.end();
+}).listen(80); // Ecouter sur le port 80 pour rediriger vers HTTPS
+
+
 
 app.get('/activate/:matricule', async (req, res) => {
   const matricule = req.params.matricule;
